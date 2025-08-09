@@ -1,8 +1,13 @@
 [package]
 name = "tmuxedo"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+authors = ["Aran Borkum <aranborkum@hotmail.com>"]
+description = "A Tmux plugin manager and configuration system"
+license = "MIT"
+repository = "https://github.com/AranBorkum/tmuxedo"
 
 [dependencies]
 dirs = "6.0.0"
 walkdir = "2.5.0"
+tokio = { version = "1", features = ["full"] }
