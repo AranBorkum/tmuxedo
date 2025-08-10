@@ -10,16 +10,33 @@ use walkdir::WalkDir;
 
 use crate::{TmuxCommand, tmuxedo::Path};
 
-async fn git_clone(plugin: &String) -> io::Result<()> {
+async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<()> {
     let path = Path::Plugins.get();
-    let status = Command::new("git")
-        .arg("clone")
-        .arg("--single-branch")
-        .arg("--recursive")
-        .arg(format!("https://git::@github.com/{}", plugin))
-        .current_dir(path)
-        .status()
-        .await?;
+
+    let status = match branch {
+        Some(b) => {
+            Command::new("git")
+                .arg("clone")
+                .arg("-b")
+                .arg(b)
+                .arg("--single-branch")
+                .arg("--recursive")
+                .arg(format!("https://git::@github.com/{}", plugin))
+                .current_dir(path)
+                .status()
+                .await?
+        }
+        None => {
+            Command::new("git")
+                .arg("clone")
+                .arg("--single-branch")
+                .arg("--recursive")
+                .arg(format!("https://git::@github.com/{}", plugin))
+                .current_dir(path)
+                .status()
+                .await?
+        }
+    };
 
     if !status.success() {
         eprintln!("Git failed: {}", plugin);
@@ -67,10 +84,21 @@ pub async fn clone() -> io::Result<()> {
 
     for line_result in reader.lines() {
         let line = line_result?;
-        let line_clone = line.clone();
+        let repo_and_branch: Vec<_> = line.split_whitespace().collect();
+
+        let repo = if repo_and_branch.len() > 0 {
+            repo_and_branch[0].to_string()
+        } else {
+            todo!()
+        };
+        let branch: Option<String> = if repo_and_branch.len() == 2 {
+            Some(repo_and_branch[1].to_string())
+        } else {
+            None
+        };
 
         let handle = task::spawn(async move {
-            let _ = git_clone(&line_clone).await;
+            let _ = git_clone(&repo, branch).await;
         });
 
         handles.push(handle);
