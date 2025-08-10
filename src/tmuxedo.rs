@@ -1,6 +1,7 @@
 use crate::plugins::{clone, run_plugins};
 use dirs::home_dir;
 use std::io::{self, Write};
+use std::vec;
 use std::{
     fs::{self, OpenOptions},
     path::PathBuf,
@@ -13,6 +14,7 @@ pub enum Path {
     Tmuxedo,
     Plugins,
     PluginsConfig,
+    TmuxedoConfig,
 }
 
 impl Path {
@@ -23,6 +25,7 @@ impl Path {
             Self::Tmuxedo => path.push("tmuxedo"),
             Self::Plugins => path.push("plugins"),
             Self::PluginsConfig => path.push("tmuxedo/plugins.conf"),
+            Self::TmuxedoConfig => path.push("tmuxedo/tmuxedo.conf"),
         };
 
         path
@@ -54,20 +57,30 @@ fn ensure_dir_exists(path: &PathBuf) {
     }
 }
 
-fn ensure_file_exists(path: &PathBuf) -> io::Result<()> {
+fn ensure_file_exists(path: &PathBuf, content: Vec<&str>) -> io::Result<()> {
     if !path.exists() {
         let mut file = OpenOptions::new()
             .create(true)
             .write(true)
             .append(true)
             .open(path)?;
-        writeln!(file, "")?;
+
+        for line in content {
+            writeln!(file, "{}", String::from(line))?;
+        }
     }
+
     Ok(())
 }
 
 pub fn ensure_structure() {
+    let plugins_defaults: Vec<&str> = vec![""];
+    let tmuxedo_defaults: Vec<&str> = vec![
+        "unbind r",
+        "bind r run-shell tmuxedo",
+    ];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());
-    let _ = ensure_file_exists(&Path::PluginsConfig.get());
+    let _ = ensure_file_exists(&Path::PluginsConfig.get(), plugins_defaults);
+    let _ = ensure_file_exists(&Path::TmuxedoConfig.get(), tmuxedo_defaults);
 }
