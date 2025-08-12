@@ -79,8 +79,8 @@ pub fn ensure_structure() {
     let tmuxedo_defaults: Vec<&str> = vec![
         "unbind r",
         "bind r run-shell tmuxedo",
-        "bind C-U run-shell tmuxedo --update",
-        "bind C-T run-shell tmuxedo --tui",
+        "bind C-u run-shell tmuxedo --update",
+        "bind C-t display-popup -E 'tmuxedo --tui'"
     ];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());
