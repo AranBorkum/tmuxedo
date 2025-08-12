@@ -1,4 +1,4 @@
-use crate::plugins::{clone, run_plugins};
+use crate::plugins::{clone, pull};
 use dirs::home_dir;
 use std::io::{self, Write};
 use std::vec;
@@ -32,7 +32,7 @@ impl Path {
     }
 }
 
-pub async fn source_all_tmuxedo_files() {
+pub async fn source_all_tmuxedo_files(update: bool) {
     let tmuxedo_dir = Path::Tmuxedo.get();
     for entry in WalkDir::new(&tmuxedo_dir)
         .into_iter()
@@ -40,14 +40,15 @@ pub async fn source_all_tmuxedo_files() {
         .filter(|e| e.path().is_file())
     {
         if entry.path().display().to_string().ends_with("plugins.conf") {
-            let _ = clone().await;
+            let _ = match update {
+                true => pull().await,
+                false => clone().await,
+            };
         } else {
             let arguments = vec![entry.path().display().to_string()];
             TmuxCommand::SourceFile.run(arguments)
         }
     }
-
-    run_plugins();
 }
 
 fn ensure_dir_exists(path: &PathBuf) {
@@ -78,6 +79,8 @@ pub fn ensure_structure() {
     let tmuxedo_defaults: Vec<&str> = vec![
         "unbind r",
         "bind r run-shell tmuxedo",
+        "bind C-U run-shell tmuxedo --update",
+        "bind C-T run-shell tmuxedo --tui",
     ];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());

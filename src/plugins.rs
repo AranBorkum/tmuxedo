@@ -1,16 +1,16 @@
 use std::{
     fs::{self, File},
-    io::{self, BufRead, BufReader},
-    process::Stdio,
+    io::{BufRead, BufReader},
+    process::{ExitStatus, Stdio},
     vec,
 };
 
-use tokio::{process::Command, task};
+use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
 use crate::{TmuxCommand, tmuxedo::Path};
 
-async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<()> {
+pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<ExitStatus> {
     let path = Path::Plugins.get();
 
     let status = match branch {
@@ -23,6 +23,8 @@ async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<()> {
                 .arg("--recursive")
                 .arg(format!("https://git::@github.com/{}", plugin))
                 .current_dir(path)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
                 .status()
                 .await?
         }
@@ -33,6 +35,8 @@ async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<()> {
                 .arg("--recursive")
                 .arg(format!("https://git::@github.com/{}", plugin))
                 .current_dir(path)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
                 .status()
                 .await?
         }
@@ -42,10 +46,10 @@ async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<()> {
         eprintln!("Git failed: {}", plugin);
     }
 
-    Ok(())
+    Ok(status)
 }
 
-async fn git_pull(plugin: &String) -> io::Result<()> {
+pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     let mut path = Path::Plugins.get();
     path.push(plugin);
 
@@ -72,6 +76,13 @@ async fn git_pull(plugin: &String) -> io::Result<()> {
         eprintln!("Git failed: {}", plugin);
     }
 
+    Ok(pull_status)
+}
+
+pub fn remove_dir(path: String) -> io::Result<()> {
+    let mut dir = Path::Plugins.get();
+    dir.push(path);
+    fs::remove_dir_all(dir)?;
     Ok(())
 }
 

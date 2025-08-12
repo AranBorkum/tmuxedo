@@ -1,0 +1,146 @@
+pub enum Plugins {
+    Themes,
+    StatusBar,
+    Plugins,
+}
+
+impl Plugins {
+    fn themes(&self) -> Vec<String> {
+        let known_plugins = vec![
+            "catppuccin/tmux",
+            "dracula/tmux",
+            "niksingh710/minimal-tmux-status",
+            "arcticicestudio/nord-tmux",
+            "rose-pine/tmux",
+            "jatap/tmux-base16-statusline",
+            "seebi/tmux-colors-solarized",
+            "erikw/tmux-dark-notify",
+            "egel/tmux-gruvbox",
+            "o0th/tmux-nova",
+            "wfxr/tmux-power",
+            "ivnvxd/tmux-snazzy",
+            "jimeh/tmux-themepack",
+            "fabioluciano/tmux-tokyo-night",
+            "janoamaral/tokyo-night-tmux",
+            "edouard-lopez/tmux-tomorrow",
+            "Nybkox/tmux-kanagawa",
+        ];
+        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
+        plugins
+    }
+
+    fn status_bar(&self) -> Vec<String> {
+        let known_plugins = vec![
+            "darko-mesaros/aws-tmux",
+            "arl/gitmux",
+            "dlurak/muxbar",
+            "2KAbhishek/tmux2k",
+            "tmux-plugins/tmux-battery",
+            "vascomfnunes/tmux-clima",
+            "Determinant/tmux-colortag",
+            "jdxcode/tmux-cpu-info",
+            "tmux-plugins/tmux-cpu",
+            "tony-sol/tmux-current-pane-hostname",
+            "tassaron/tmux-df",
+            "vascomfnunes/tmux-kripto",
+            "tony-sol/tmux-kubectx",
+            "tmux-plugins/tmux-maildir-counter",
+            "thewtex/tmux-mem-cpu-load",
+            "MunifTanjim/tmux-mode-indicator",
+            "Feqzz/tmux-mpv-info",
+            "jaclu/tmux-mullvad",
+            "vascomfnunes/tmux-ludanta",
+            "joshmedeski/tmux-nerd-font-window-name",
+            "xamut/tmux-network-bandwidth",
+            "maxrodrigo/tmux-nordvpn",
+            "tmux-plugins/tmux-online-status",
+            "jaclu/tmux-packet-loss",
+            "Brutuski/tmux-piavpn",
+            "richin13/tmux-plugin-playerctl",
+            "olimorris/tmux-pomodoro-plus",
+            "tmux-plugins/tmux-prefix-highlight",
+            "charlietag/tmux-split-statusbar",
+            "jdxcode/tmux-spotify-info",
+            "Feqzz/tmux-spotify-info",
+            "TheSast/tmux-transient-status",
+            "jdxcode/tmux-weather",
+            "xamut/tmux-weather",
+            "ofirgall/tmux-window-name",
+            "Feqzz/tmux-weather-info-yr",
+            "alexanderjeurissen/tmux-world-clock",
+            "sjdonado/tmux-workspace-usage",
+        ];
+        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
+        plugins
+    }
+
+    fn plugins(&self) -> Vec<String> {
+        let known_plugins = vec![
+            "AranBorkum/tmux-cookie-cutter",
+            "hamolicious/back-in-5",
+            "tweekmonster/tmux2html",
+            "NHDaly/tmux-better-mouse-mode",
+            "laktak/extrakto",
+            "tardunge/kmux-status",
+            "bjesus/muxile",
+            "b0o/tmux-autoreload",
+            "Alkindi42/tmux-bitwarden",
+            "ofirgall/tmux-browser",
+            "kenos1/tmux-cht-sh",
+            "aless3/tmux-click-copy",
+            "lost-melody/tmux-command-palette",
+            "CrispyConductor/tmux-copy-toolkit",
+            "IngoMeyer441/tmux-easy-motion",
+            "ddzero2c/tmux-easymotion",
+            "MaximilianGaedig/tmux-filter",
+            "Morantron/tmux-fingers",
+            "lloydbond/tmux-floating-terminal",
+            "roosta/tmux-fuzzback",
+            "wfxr/tmux-fzf-url",
+            "thuanOwa/tmux-fzf-session-switch",
+            "tardunge/tmux-gh",
+            "TheSast/tmux-keylocker",
+            "jaclu/tmux-menus",
+            "whame/tmux-modal",
+            "jaclu/tmux-mouse-swipe",
+            "rickstaa/tmux-notify",
+            "trevarj/tmux-open-nvim",
+            "Peter-McKinney/tmux-fzf-open-files-nvim",
+            "fcsonline/tmux-thumbs",
+            "yardnsm/tmux-1password",
+            "schasse/tmux-jump",
+            "jaclu/tmux-power-zoom",
+            "27medkamal/tmux-session-wizard",
+            "kristijanhusak/tmux-simple-git-status",
+            "xamut/tmux-spotify",
+            "danjeltahko/spotify-tmux",
+            "artemave/tmux_super_fingers",
+            "jabirali/tmux-tilish",
+            "2KAbhishek/tmux-tilit",
+            "croxarens/tmux-timetrap",
+            "gcla/tmux-wormhole",
+            "GoHarder/tmux-pianobar",
+            "tmux-plugins/tmux-continuum",
+            "tmux-plugins/tmux-copycat",
+            "tmux-plugins/tmux-fpp",
+            "tmux-plugins/tmux-logging",
+            "tmux-plugins/tmux-open",
+            "tmux-plugins/tmux-pain-control",
+            "tmux-plugins/tmux-resurrect",
+            "tmux-plugins/tmux-sessionist",
+            "tmux-plugins/tmux-sidebar",
+            "tmux-plugins/tmux-urlview",
+            "tmux-plugins/tmux-yank",
+        ];
+        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
+        plugins
+    }
+
+    pub fn all(&self) -> Vec<String> {
+        match self {
+            Self::Themes => self.themes(),
+            Self::StatusBar => self.status_bar(),
+            Self::Plugins => self.plugins(),
+        }
+    }
+}
