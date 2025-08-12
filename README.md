@@ -1,26 +1,26 @@
-# Tmuxedo: a cleaner, modular approach to configuring tmux
+# Tmuxedo 🕴️ — A Cleaner, Modular Approach to Tmux Configuration
 
-`tmuxedo` helps you break down your tmux configuration into modular files and manage plugins in a structured, organized manner. This makes your tmux config easier to maintain, extend, and understand.
-
----
-### Features
-
-- 🔧 **Modular config** — break up your `.tmux.conf` into logical, maintainable chunks
-- 📦 **Plugin manager** — declarative plugin list, zero boilerplate
-- 🔄 **Auto-updates** — clones and updates plugins automatically
-- ⚡ **One command to rule them all** — apply config + plugins in one go (`tmuxedo`)
+**Tmuxedo** helps you break down your tmux configuration into modular files and manage plugins in a clean, structured way.  
+Maintainable, extensible, and fast - keep your tmux setup under control.
 
 ---
-### Installation
+### ✨ Features
 
-Install from crates.io:
+- 🔧 **Modular config** – split your `.tmux.conf` into logical, reusable files
+- 📦 **Built-in plugin manager** – declarative config, zero boilerplate
+- 🔄 **Automatic plugin updates** – clones and keeps plugins up to date
+- ⚡ **One command to rule them all** – apply config + plugins in one shot
+    
 
+---
+### 📦 Installation
+
+Install from [crates.io](https://crates.io/crates/tmuxedo):
 ```bash
 cargo install tmuxedo
 ```
 
-Or build it manually:
-
+Or build from source:
 ```bash
 git clone https://github.com/AranBorkum/tmuxedo
 cd tmuxedo
@@ -28,46 +28,65 @@ cargo install --path .
 ```
 
 ---
-### Getting started
-When you first run `tmuxedo`, it will create the following directories and files:
+### 🚀 Getting Started
 
-- `~/.config/tmux/tmuxedo/`: where your modular configuration files live
-- `~/.config/tmux/plugins/`: where plugins are cloned
-- `~/.config/tmux/tmuxedo/plugins.conf`: defines your desired plugins
+Running `tmuxedo` for the first time sets up:
 
-#### Adding Configurations
+- `~/.config/tmux/tmuxedo/` – your modular config directory
+- `~/.config/tmux/plugins/` – plugin installation directory
+- `~/.config/tmux/tmuxedo/plugins.conf` – your plugin manifest
 
-To define tmux settings, create `.conf` files in the `tmuxedo/` directory. You can name them however you like, as long as they end in `.conf`.
+Add this line to the end of your `.tmux.conf` to hook it all up:
+```tmux
+run-shell 'tmuxedo'
+```
+---
+### 🛠 Adding Config Files
 
-Example: `bindings.conf`
+Drop `.conf` files into `~/.config/tmux/tmuxedo/`. You can name them however you like.
 
-```bash
+**Example: `bindings.conf`**
+```tmux
 unbind C-b
 set-option -g prefix C-a
 bind-key C-a send-prefix
 
 unbind r
-bind r run-shell tmuxedo 
+bind r run-shell tmuxedo
 ```
+---
+### 🔌 Managing Plugins
 
-#### Adding Plugins
+#### Via TUI
 
-Add plugin repository names to `plugins.conf`. For example:
-
+Run the built-in terminal UI:
 ```bash
-AranBorkum/tmux-cookie-cutter
-tmux-plugins/tmux-yank
+tmuxedo --tui
 ```
+Or use the key binding: `<prefix> + C-t` (defined by default).
 
-`tmuxedo` will clone these into your plugins directory and keep them up to date.
+The TUI lets you:
 
-#### Applying Changes
+- Install plugins from the known list
+- Update or remove existing plugins
+- Add new ones manually
 
-To apply your configuration and plugins, simply run:
+If a plugin isn't listed, manually add it to `plugins.conf`, and consider submitting a PR to include it for others!
 
+---
+### 🔄 Applying Changes
+
+To apply your full configuration (including plugins), just run:
 ```bash
 tmuxedo
 ```
+For convenience, bind it to a key in tmux (e.g. `<prefix> + r`):
+```tmux
+bind r run-shell tmuxedo
+```
 
-You can also bind it to a key in tmux (e.g., `<prefix>r`) for convenience.
+---
+### 🙌 Contributions Welcome
 
+Found a bug? Want to suggest a plugin or feature?  
+Open an issue or PR on [GitHub](https://github.com/AranBorkum/tmuxedo)!
