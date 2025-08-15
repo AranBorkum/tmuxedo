@@ -1,0 +1,52 @@
+name: Enforce Version Update by Owner
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  check-version:
+    name: Check Cargo.toml Version Update Authorship
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # fetch previous commit
+
+      - name: Get current version
+        id: current
+        run: |
+          version=$(grep '^version' Cargo.toml | head -n1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Get previous version
+        id: previous
+        run: |
+          previous_version=$(git show HEAD^:Cargo.toml | grep '^version' | head -n1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$previous_version" >> $GITHUB_OUTPUT
+
+      - name: Get pusher username
+        id: pusher
+        run: |
+          echo "username=${{ github.actor }}" >> $GITHUB_OUTPUT
+
+      - name: Fail if version was changed by non-owner
+        run: |
+          echo "Previous version: ${{ steps.previous.outputs.version }}"
+          echo "Current version: ${{ steps.current.outputs.version }}"
+          echo "Committer: ${{ steps.pusher.outputs.username }}"
+          
+          if [ "${{ steps.previous.outputs.version }}" != "${{ steps.current.outputs.version }}" ]; then
+            if [ "${{ steps.pusher.outputs.username }}" != "AranBorkum" ]; then
+              echo "❌ Version change detected, but the committer is not the repository owner."
+              exit 1
+            else
+              echo "✅ Version change by owner allowed."
+            fi
+          else
+            echo "✅ No version change detected."
+          fi
+
