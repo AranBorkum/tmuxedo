@@ -8,7 +8,7 @@ use std::{
 use crate::plugins::{remove_dir, run_plugins};
 use crate::{
     plugins::{git_clone, git_pull},
-    register::Plugins,
+    register::TmuxPlugins,
     tmuxedo::Path,
     tui::WindowTab,
 };
@@ -43,13 +43,13 @@ impl State {
             _ => todo!(),
         };
         let reader = BufReader::new(file);
-        let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
+        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
 
         for plugin in &lines {
             all_installed_plugins.push(plugin.to_string());
         }
 
-        for theme in Plugins::Themes.all() {
+        for theme in TmuxPlugins::Themes.all() {
             if lines.contains(&theme) {
                 installed_themes.push(theme);
             } else {
@@ -57,7 +57,7 @@ impl State {
             }
         }
 
-        for status_bar in Plugins::StatusBar.all() {
+        for status_bar in TmuxPlugins::StatusBar.all() {
             if lines.contains(&status_bar) {
                 installed_status_bars.push(status_bar);
             } else {
@@ -65,7 +65,7 @@ impl State {
             }
         }
 
-        for plugin in Plugins::Plugins.all() {
+        for plugin in TmuxPlugins::Plugins.all() {
             if lines.contains(&plugin) {
                 installed_plugins.push(plugin);
             } else {
@@ -125,26 +125,26 @@ impl State {
     pub fn next_available_plugin(&mut self) {
         let n_plugins = self.get_available_plugins().len();
         if self.selected_available_plugin != n_plugins - 1 {
-            self.selected_available_plugin = self.selected_available_plugin + 1
+            self.selected_available_plugin += 1
         }
     }
 
     pub fn previous_available_plugin(&mut self) {
         if self.selected_available_plugin != 0 {
-            self.selected_available_plugin = self.selected_available_plugin - 1
+            self.selected_available_plugin -= 1
         }
     }
 
     pub fn next_installed_plugin(&mut self) {
         let n_plugins = self.get_installed_plugins().len();
         if self.selected_installed_plugin != n_plugins - 1 {
-            self.selected_installed_plugin = self.selected_installed_plugin + 1
+            self.selected_installed_plugin += 1
         }
     }
 
     pub fn previous_installed_plugin(&mut self) {
         if self.selected_installed_plugin != 0 {
-            self.selected_installed_plugin = self.selected_installed_plugin - 1
+            self.selected_installed_plugin -= 1
         }
     }
 
@@ -165,26 +165,26 @@ impl State {
             .to_string())
     }
 
-    fn move_plugin_to_installed(&mut self, plugin: &String) {
+    fn move_plugin_to_installed(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
-                self.installed_themes.push(plugin.clone());
-                self.all_installed_plugins.push(plugin.clone());
+                self.installed_themes.push(plugin.to_owned());
+                self.all_installed_plugins.push(plugin.to_owned());
                 self.installed_themes.sort();
                 self.all_installed_plugins.sort();
                 self.available_themes.remove(self.selected_available_plugin);
             }
             WindowTab::StatusBar => {
-                self.installed_status_bars.push(plugin.clone());
-                self.all_installed_plugins.push(plugin.clone());
+                self.installed_status_bars.push(plugin.to_owned());
+                self.all_installed_plugins.push(plugin.to_owned());
                 self.installed_status_bars.sort();
                 self.all_installed_plugins.sort();
                 self.available_status_bars
                     .remove(self.selected_available_plugin);
             }
             WindowTab::Plugins => {
-                self.installed_plugins.push(plugin.clone());
-                self.all_installed_plugins.push(plugin.clone());
+                self.installed_plugins.push(plugin.to_owned());
+                self.all_installed_plugins.push(plugin.to_owned());
                 self.installed_plugins.sort();
                 self.all_installed_plugins.sort();
                 self.available_plugins
@@ -194,24 +194,27 @@ impl State {
         }
     }
 
-    fn move_plugin_to_available(&mut self, plugin: &String) {
+    fn move_plugin_to_available(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
-                self.available_themes.push(plugin.clone());
-                self.all_installed_plugins.retain(|s| s != &plugin.clone());
+                self.available_themes.push(plugin.to_owned());
+                self.all_installed_plugins
+                    .retain(|s| s != &plugin.to_owned());
                 self.available_themes.sort();
                 self.installed_themes.remove(self.selected_installed_plugin);
             }
             WindowTab::StatusBar => {
-                self.available_status_bars.push(plugin.clone());
-                self.all_installed_plugins.retain(|s| s != &plugin.clone());
+                self.available_status_bars.push(plugin.to_owned());
+                self.all_installed_plugins
+                    .retain(|s| s != &plugin.to_owned());
                 self.available_status_bars.sort();
                 self.installed_status_bars
                     .remove(self.selected_installed_plugin);
             }
             WindowTab::Plugins => {
-                self.available_plugins.push(plugin.clone());
-                self.all_installed_plugins.retain(|s| s != &plugin.clone());
+                self.available_plugins.push(plugin.to_owned());
+                self.all_installed_plugins
+                    .retain(|s| s != &plugin.to_owned());
                 self.available_plugins.sort();
                 self.installed_plugins
                     .remove(self.selected_installed_plugin);
@@ -234,7 +237,7 @@ impl State {
         let plugins = self.get_available_plugins();
         let plugin = &plugins[self.selected_available_plugin];
 
-        let status = git_clone(&plugin, None).await.expect("REASON");
+        let status = git_clone(plugin, None).await.expect("REASON");
         if status.success() {
             self.move_plugin_to_installed(plugin);
             let _ = self.write_installed_plugins();

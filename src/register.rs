@@ -1,10 +1,10 @@
-pub enum Plugins {
+pub enum TmuxPlugins {
     Themes,
     StatusBar,
     Plugins,
 }
 
-impl Plugins {
+impl TmuxPlugins {
     fn themes(&self) -> Vec<String> {
         let known_plugins = vec![
             "catppuccin/tmux",
@@ -25,8 +25,7 @@ impl Plugins {
             "edouard-lopez/tmux-tomorrow",
             "Nybkox/tmux-kanagawa",
         ];
-        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
-        plugins
+        known_plugins.iter().map(|e| e.to_string()).collect()
     }
 
     fn status_bar(&self) -> Vec<String> {
@@ -70,8 +69,7 @@ impl Plugins {
             "alexanderjeurissen/tmux-world-clock",
             "sjdonado/tmux-workspace-usage",
         ];
-        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
-        plugins
+        known_plugins.iter().map(|e| e.to_string()).collect()
     }
 
     fn plugins(&self) -> Vec<String> {
@@ -132,8 +130,7 @@ impl Plugins {
             "tmux-plugins/tmux-urlview",
             "tmux-plugins/tmux-yank",
         ];
-        let plugins = known_plugins.iter().map(|e| e.to_string()).collect();
-        plugins
+        known_plugins.iter().map(|e| e.to_string()).collect()
     }
 
     pub fn all(&self) -> Vec<String> {

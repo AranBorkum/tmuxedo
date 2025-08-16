@@ -1,14 +1,13 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    prelude::Backend,
     style::{Color, Modifier, Style},
     widgets::{List, ListItem, ListState, Paragraph},
 };
 
 use crate::state::State;
 
-pub fn render_list<B: Backend>(f: &mut Frame, rect: Rect, state: &State) {
+pub fn render_list(f: &mut Frame, rect: Rect, state: &State) {
     let top_bottom = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(1), Constraint::Min(0)])
@@ -26,8 +25,7 @@ pub fn render_list<B: Backend>(f: &mut Frame, rect: Rect, state: &State) {
     let list_items: Vec<ListItem> = state
         .get_available_plugins()
         .iter()
-        .enumerate()
-        .map(|(_i, s)| ListItem::new(format!(" * {}", s.clone())))
+        .map(|s| ListItem::new(format!(" * {}", s.clone())))
         .collect();
 
     let list = if state.toggle_available_list {
