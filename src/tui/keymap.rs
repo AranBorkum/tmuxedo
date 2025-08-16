@@ -1,7 +1,6 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    prelude::Backend,
     style::{Color, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
@@ -9,10 +8,10 @@ use ratatui::{
 
 use crate::{bindings, state::State};
 
-pub fn render_keymap<B: Backend>(f: &mut Frame, rect: Rect, state: &State) {
+pub fn render_keymap(f: &mut Frame, rect: Rect, state: &State) {
     let block = Block::default().title("My Paragraph").borders(Borders::ALL);
 
-    let line = bindings::get(&state)
+    let line = bindings::get(state)
         .into_iter()
         .flat_map(|key| {
             vec![

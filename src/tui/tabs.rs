@@ -1,7 +1,6 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    prelude::Backend,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Tabs},
@@ -9,8 +8,8 @@ use ratatui::{
 
 use crate::{state::State, tui::WindowTab};
 
-pub fn render_tabs<B: Backend>(f: &mut Frame, rect: Rect, state: &State) {
-    let tab_titles = vec![
+pub fn render_tabs(f: &mut Frame, rect: Rect, state: &State) {
+    let tab_titles = [
         WindowTab::All.repr(),
         WindowTab::Themes.repr(),
         WindowTab::StatusBar.repr(),
@@ -21,7 +20,7 @@ pub fn render_tabs<B: Backend>(f: &mut Frame, rect: Rect, state: &State) {
         .iter()
         .map(|t| {
             Line::from(Span::styled(
-                format!(" {} ", t),
+                format!(" {t} "),
                 Style::default().fg(Color::White),
             ))
         })

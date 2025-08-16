@@ -39,8 +39,8 @@ impl TmuxCommand {
 
         match status {
             Ok(status) if status.success() => {}
-            Ok(status) => eprintln!("Tmux command failed with status: {}", status),
-            Err(e) => eprintln!("Failed to run tmux command: {}", e),
+            Ok(status) => eprintln!("Tmux command failed with status: {status}"),
+            Err(e) => eprintln!("Failed to run tmux command: {e}"),
         }
     }
 }
@@ -81,7 +81,7 @@ async fn run_tui() -> Result<(), Box<dyn Error>> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("{:?}", err);
+        println!("{err:?}");
     }
 
     Ok(())

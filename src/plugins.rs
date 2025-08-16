@@ -21,7 +21,7 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
                 .arg(b)
                 .arg("--single-branch")
                 .arg("--recursive")
-                .arg(format!("https://git::@github.com/{}", plugin))
+                .arg(format!("https://git::@github.com/{plugin}"))
                 .current_dir(path)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -33,7 +33,7 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
                 .arg("clone")
                 .arg("--single-branch")
                 .arg("--recursive")
-                .arg(format!("https://git::@github.com/{}", plugin))
+                .arg(format!("https://git::@github.com/{plugin}"))
                 .current_dir(path)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -43,7 +43,7 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
     };
 
     if !status.success() {
-        eprintln!("Git failed: {}", plugin);
+        eprintln!("Git failed: {plugin}");
     }
 
     Ok(status)
@@ -70,10 +70,10 @@ pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
         .await?;
 
     if !pull_status.success() {
-        eprintln!("Git failed: {}", plugin);
+        eprintln!("Git failed: {plugin}");
     }
     if !submodule_status.success() {
-        eprintln!("Git failed: {}", plugin);
+        eprintln!("Git failed: {plugin}");
     }
 
     Ok(pull_status)
@@ -97,7 +97,7 @@ pub async fn clone() -> io::Result<()> {
         let line = line_result?;
         let repo_and_branch: Vec<_> = line.split_whitespace().collect();
 
-        let repo = if repo_and_branch.len() > 0 {
+        let repo = if !repo_and_branch.is_empty() {
             repo_and_branch[0].to_string()
         } else {
             todo!()
@@ -117,7 +117,7 @@ pub async fn clone() -> io::Result<()> {
 
     for handle in handles {
         if let Err(e) = handle.await {
-            eprintln!("Task failed: {:?}", e);
+            eprintln!("Task failed: {e:?}");
         }
     }
 
@@ -142,7 +142,7 @@ pub async fn pull() -> io::Result<()> {
 
     for handle in handles {
         if let Err(e) = handle.await {
-            eprintln!("Task failed: {:?}", e);
+            eprintln!("Task failed: {e:?}");
         }
     }
 

@@ -52,19 +52,15 @@ pub async fn source_all_tmuxedo_files(update: bool) {
 }
 
 fn ensure_dir_exists(path: &PathBuf) {
-    match fs::create_dir_all(&path) {
+    match fs::create_dir_all(path) {
         Ok(_) => {}
-        Err(e) => eprintln!("Error creating directory: {}", e),
+        Err(e) => eprintln!("Error creating directory: {e}"),
     }
 }
 
 fn ensure_file_exists(path: &PathBuf, content: Vec<&str>) -> io::Result<()> {
     if !path.exists() {
-        let mut file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .append(true)
-            .open(path)?;
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
         for line in content {
             writeln!(file, "{}", String::from(line))?;
@@ -80,7 +76,7 @@ pub fn ensure_structure() {
         "unbind r",
         "bind r run-shell tmuxedo",
         "bind C-u run-shell tmuxedo --update",
-        "bind C-t display-popup -E 'tmuxedo --tui'"
+        "bind C-t display-popup -E 'tmuxedo --tui'",
     ];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());

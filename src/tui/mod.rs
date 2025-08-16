@@ -25,42 +25,42 @@ pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Resu
 
     loop {
         terminal.draw(|f| {
-            render::<B>(f, &state);
+            render(f, &state);
         })?;
-        if event::poll(std::time::Duration::from_millis(100))? {
-            if let event::Event::Key(key) = event::read()? {
-                if let event::KeyCode::Char('q') = key.code {
-                    break;
-                }
-                if let event::KeyCode::Char('1') = key.code {
-                    state.set_tab(WindowTab::All);
-                    state.reset_selected_available_plugin();
-                    state.reset_selected_installed_plugin();
-                }
-                if let event::KeyCode::Char('2') = key.code {
-                    state.set_tab(WindowTab::Themes);
-                    state.reset_selected_available_plugin();
-                    state.reset_selected_installed_plugin();
-                }
-                if let event::KeyCode::Char('3') = key.code {
-                    state.set_tab(WindowTab::StatusBar);
-                    state.reset_selected_available_plugin();
-                    state.reset_selected_installed_plugin();
-                }
-                if let event::KeyCode::Char('4') = key.code {
-                    state.set_tab(WindowTab::Plugins);
-                    state.reset_selected_available_plugin();
-                    state.reset_selected_installed_plugin();
-                }
-                if let (event::KeyCode::Char('o'), event::KeyModifiers::CONTROL) =
-                    (key.code, key.modifiers)
-                {
-                    state.toggle_available();
-                }
-                match state.toggle_available_list {
-                    true => available_plugins_actions(key, &mut state).await,
-                    false => installed_plugins_actions(key, &mut state).await,
-                }
+        if event::poll(std::time::Duration::from_millis(100))?
+            && let event::Event::Key(key) = event::read()?
+        {
+            if let event::KeyCode::Char('q') = key.code {
+                break;
+            }
+            if let event::KeyCode::Char('1') = key.code {
+                state.set_tab(WindowTab::All);
+                state.reset_selected_available_plugin();
+                state.reset_selected_installed_plugin();
+            }
+            if let event::KeyCode::Char('2') = key.code {
+                state.set_tab(WindowTab::Themes);
+                state.reset_selected_available_plugin();
+                state.reset_selected_installed_plugin();
+            }
+            if let event::KeyCode::Char('3') = key.code {
+                state.set_tab(WindowTab::StatusBar);
+                state.reset_selected_available_plugin();
+                state.reset_selected_installed_plugin();
+            }
+            if let event::KeyCode::Char('4') = key.code {
+                state.set_tab(WindowTab::Plugins);
+                state.reset_selected_available_plugin();
+                state.reset_selected_installed_plugin();
+            }
+            if let (event::KeyCode::Char('o'), event::KeyModifiers::CONTROL) =
+                (key.code, key.modifiers)
+            {
+                state.toggle_available();
+            }
+            match state.toggle_available_list {
+                true => available_plugins_actions(key, &mut state).await,
+                false => installed_plugins_actions(key, &mut state).await,
             }
         }
     }
@@ -95,7 +95,7 @@ async fn installed_plugins_actions(key: KeyEvent, state: &mut State) {
     }
 }
 
-fn render<B: Backend>(f: &mut Frame, state: &State) {
+fn render(f: &mut Frame, state: &State) {
     let size = f.area();
 
     let chunks = Layout::default()
@@ -111,12 +111,12 @@ fn render<B: Backend>(f: &mut Frame, state: &State) {
         )
         .split(size);
 
-    render_tabs::<B>(f, chunks[0], state);
-    render_installed_list::<B>(f, chunks[1], state);
+    render_tabs(f, chunks[0], state);
+    render_installed_list(f, chunks[1], state);
     if state.tab != WindowTab::All {
-        render_list::<B>(f, chunks[2], state);
+        render_list(f, chunks[2], state);
     }
-    render_keymap::<B>(f, chunks[3], state);
+    render_keymap(f, chunks[3], state);
 }
 
 #[derive(PartialEq)]
