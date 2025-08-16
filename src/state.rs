@@ -266,3 +266,169 @@ impl State {
         run_plugins();
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn get_state() -> State {
+        let available_themes: Vec<String> =
+            vec!["t1".to_string(), "t2".to_string(), "t3".to_string()];
+        let available_status_bars: Vec<String> =
+            vec!["s1".to_string(), "s2".to_string(), "s3".to_string()];
+        let available_plugins: Vec<String> =
+            vec!["p1".to_string(), "p2".to_string(), "p3".to_string()];
+        let installed_themes: Vec<String> =
+            vec!["ti1".to_string(), "ti2".to_string(), "ti3".to_string()];
+        let installed_status_bars: Vec<String> =
+            vec!["si1".to_string(), "si2".to_string(), "si3".to_string()];
+        let installed_plugins: Vec<String> =
+            vec!["pi1".to_string(), "pi2".to_string(), "pi3".to_string()];
+
+        State {
+            tab: WindowTab::Themes,
+            selected_available_plugin: 0,
+            selected_installed_plugin: 0,
+            toggle_available_list: false,
+            all_installed_plugins: vec![],
+            installed_themes,
+            installed_status_bars,
+            installed_plugins,
+            available_themes,
+            available_status_bars,
+            available_plugins,
+        }
+    }
+
+    #[test]
+    fn test_set_tab() {
+        let mut state = get_state();
+        assert!(state.tab == WindowTab::Themes);
+        state.set_tab(WindowTab::Plugins);
+        assert!(state.tab == WindowTab::Plugins);
+    }
+
+    #[test]
+    fn test_toggle_available() {
+        let mut state = get_state();
+        assert!(!state.toggle_available_list);
+        state.toggle_available();
+        assert!(state.toggle_available_list);
+    }
+
+    #[test]
+    fn test_get_installed_plugin() {
+        let mut state = get_state();
+        assert!(state.tab == WindowTab::Themes);
+        let themes = state.get_installed_plugins();
+        assert!(themes[0] == "ti1");
+
+        state.set_tab(WindowTab::Plugins);
+        let plugins = state.get_installed_plugins();
+        assert!(plugins[0] == "pi1");
+    }
+
+    #[test]
+    fn test_get_available_plugin() {
+        let mut state = get_state();
+        assert!(state.tab == WindowTab::Themes);
+        let themes = state.get_available_plugins();
+        assert!(themes[0] == "t1");
+
+        state.set_tab(WindowTab::Plugins);
+        let plugins = state.get_available_plugins();
+        assert!(plugins[0] == "p1");
+    }
+
+    #[test]
+    fn test_next_available_plugin() {
+        let mut state = get_state();
+        assert!(state.selected_available_plugin == 0);
+        assert!(state.get_available_plugins().len() == 3);
+        state.next_available_plugin();
+        assert!(state.selected_available_plugin == 1);
+    }
+
+    #[test]
+    fn test_next_available_plugin_overflow() {
+        let mut state = get_state();
+        assert!(state.get_available_plugins().len() == 3);
+        state.selected_available_plugin = 2;
+        assert!(state.selected_available_plugin == 2);
+        state.next_available_plugin();
+        assert!(state.selected_available_plugin == 2);
+    }
+
+    #[test]
+    fn test_previous_available_plugin() {
+        let mut state = get_state();
+        assert!(state.get_available_plugins().len() == 3);
+        state.selected_available_plugin = 2;
+        assert!(state.selected_available_plugin == 2);
+        state.previous_available_plugin();
+        assert!(state.selected_available_plugin == 1);
+    }
+
+    #[test]
+    fn test_previous_available_plugin_underflow() {
+        let mut state = get_state();
+        assert!(state.selected_available_plugin == 0);
+        state.previous_available_plugin();
+        assert!(state.selected_available_plugin == 0);
+    }
+
+    #[test]
+    fn test_next_installed_plugin() {
+        let mut state = get_state();
+        assert!(state.selected_installed_plugin == 0);
+        assert!(state.get_installed_plugins().len() == 3);
+        state.next_installed_plugin();
+        assert!(state.selected_installed_plugin == 1);
+    }
+
+    #[test]
+    fn test_next_installed_plugin_overflow() {
+        let mut state = get_state();
+        assert!(state.get_installed_plugins().len() == 3);
+        state.selected_installed_plugin = 2;
+        assert!(state.selected_installed_plugin == 2);
+        state.next_installed_plugin();
+        assert!(state.selected_installed_plugin == 2);
+    }
+
+    #[test]
+    fn test_previous_installed_plugin() {
+        let mut state = get_state();
+        assert!(state.get_installed_plugins().len() == 3);
+        state.selected_installed_plugin = 2;
+        assert!(state.selected_installed_plugin == 2);
+        state.previous_installed_plugin();
+        assert!(state.selected_installed_plugin == 1);
+    }
+
+    #[test]
+    fn test_previous_installed_plugin_underflow() {
+        let mut state = get_state();
+        assert!(state.selected_installed_plugin == 0);
+        state.previous_installed_plugin();
+        assert!(state.selected_installed_plugin == 0);
+    }
+
+    #[test]
+    fn reset_selected_available_plugin() {
+        let mut state = get_state();
+        state.selected_available_plugin = 2;
+        assert!(state.selected_available_plugin == 2);
+        state.reset_selected_available_plugin();
+        assert!(state.selected_available_plugin == 0);
+    }
+
+    #[test]
+    fn reset_selected_installed_plugin() {
+        let mut state = get_state();
+        state.selected_installed_plugin = 2;
+        assert!(state.selected_installed_plugin == 2);
+        state.reset_selected_installed_plugin();
+        assert!(state.selected_installed_plugin == 0);
+    }
+}
