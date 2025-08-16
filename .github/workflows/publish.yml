@@ -26,7 +26,7 @@ jobs:
       - name: Get previous version
         id: previous_version
         run: |
-          git fetch origin main --depth=2
+          git fetch origin master --depth=2
           previous_version=$(git show HEAD^:Cargo.toml | grep '^version' | head -n 1 | sed 's/version = "\(.*\)"/\1/')
           echo "version=$previous_version" >> $GITHUB_OUTPUT
 
