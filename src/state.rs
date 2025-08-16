@@ -123,9 +123,11 @@ impl State {
     }
 
     pub fn next_available_plugin(&mut self) {
-        let n_plugins = self.get_available_plugins().len();
-        if self.selected_available_plugin != n_plugins - 1 {
-            self.selected_available_plugin += 1
+        if !self.get_available_plugins().is_empty() {
+            let n_plugins = self.get_available_plugins().len();
+            if self.selected_available_plugin != n_plugins - 1 {
+                self.selected_available_plugin += 1
+            }
         }
     }
 
@@ -136,9 +138,11 @@ impl State {
     }
 
     pub fn next_installed_plugin(&mut self) {
-        let n_plugins = self.get_installed_plugins().len();
-        if self.selected_installed_plugin != n_plugins - 1 {
-            self.selected_installed_plugin += 1
+        if !self.get_installed_plugins().is_empty() {
+            let n_plugins = self.get_installed_plugins().len();
+            if self.selected_installed_plugin != n_plugins - 1 && n_plugins > 0 {
+                self.selected_installed_plugin += 1
+            }
         }
     }
 
