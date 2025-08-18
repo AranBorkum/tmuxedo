@@ -5,6 +5,7 @@ use std::{
     vec,
 };
 
+use regex::Regex;
 use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
@@ -77,6 +78,33 @@ pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     }
 
     Ok(pull_status)
+}
+
+pub async fn check_for_update(plugin: &String) -> io::Result<()> {
+    let mut path = Path::Plugins.get();
+    path.push(plugin);
+
+    let output = Command::new("git")
+        .arg("pull")
+        .arg("--dry-run")
+        .current_dir(&path)
+        .stdout(Stdio::piped())
+        .output()
+        .await?;
+
+    let text = String::from_utf8(output.stderr).expect("REASON");
+    let re = Regex::new(r"([a-f0-9]{7})\.\.([a-f0-9]{7})").unwrap();
+
+    if let Some(caps) = re.captures(&text.to_string()) {
+        let start = &caps[1];
+        let end = &caps[2];
+        println!("Start commit: {}", start);
+        println!("End commit: {}", end);
+    } else {
+        println!("No match found.");
+    }
+
+    Ok(())
 }
 
 pub fn remove_dir(path: String) -> io::Result<()> {
