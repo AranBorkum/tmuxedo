@@ -1,5 +1,7 @@
 use std::{
+    fmt::{self, Display},
     fs::{self, File},
+    hash::{Hash, Hasher},
     io::{BufRead, BufReader},
     process::{ExitStatus, Stdio},
     vec,
@@ -10,6 +12,43 @@ use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
 use crate::{TmuxCommand, tmuxedo::Path};
+
+#[derive(Debug, Eq, Clone)]
+pub struct Plugin {
+    pub path: String,
+    pub is_up_to_date: bool,
+}
+
+impl PartialEq for Plugin {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.is_up_to_date == other.is_up_to_date
+    }
+}
+
+impl Hash for Plugin {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.path.hash(state);
+        self.is_up_to_date.hash(state);
+    }
+}
+
+impl PartialOrd for Plugin {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.path.cmp(&other.path))
+    }
+}
+
+impl Ord for Plugin {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+
+impl Display for Plugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.path)
+    }
+}
 
 pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<ExitStatus> {
     let path = Path::Plugins.get();
