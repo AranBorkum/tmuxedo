@@ -1,14 +1,49 @@
 use std::{
+    fmt::{self, Display},
     fs::{self, File},
+    hash::{Hash, Hasher},
     io::{BufRead, BufReader},
     process::{ExitStatus, Stdio},
     vec,
 };
 
+use regex::Regex;
 use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
 use crate::{TmuxCommand, tmuxedo::Path};
+
+#[derive(Debug, Eq, Clone)]
+pub struct Plugin {
+    pub path: String,
+    pub commit_hash: String,
+    pub is_up_to_date: bool,
+}
+
+impl Plugin {
+    pub fn set_commit_hash(&mut self, commit_hash: String) {
+        self.commit_hash = commit_hash;
+    }
+}
+
+impl PartialEq for Plugin {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.is_up_to_date == other.is_up_to_date
+    }
+}
+
+impl Hash for Plugin {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.path.hash(state);
+        self.is_up_to_date.hash(state);
+    }
+}
+
+impl Display for Plugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.path)
+    }
+}
 
 pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<ExitStatus> {
     let path = Path::Plugins.get();
@@ -79,6 +114,28 @@ pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     Ok(pull_status)
 }
 
+pub async fn check_for_update(plugin: &str) -> io::Result<(String, String)> {
+    let mut path = Path::Plugins.get();
+    path.push(plugin.split("/").collect::<Vec<_>>()[1]);
+
+    let output = Command::new("git")
+        .arg("pull")
+        .arg("--dry-run")
+        .current_dir(&path)
+        .stdout(Stdio::piped())
+        .output()
+        .await?;
+
+    let text = String::from_utf8(output.stderr).expect("REASON");
+    let re = Regex::new(r"([a-f0-9]{7})\.\.([a-f0-9]{7})").unwrap();
+
+    let mut commit = String::new();
+    if let Some(caps) = re.captures(&text.to_string()) {
+        commit = caps[2].to_string();
+    }
+    Ok((plugin.to_owned(), commit))
+}
+
 pub fn remove_dir(path: String) -> io::Result<()> {
     let mut dir = Path::Plugins.get();
     dir.push(path);
@@ -139,7 +196,6 @@ pub async fn pull() -> io::Result<()> {
 
         handles.push(handle);
     }
-
     for handle in handles {
         if let Err(e) = handle.await {
             eprintln!("Task failed: {e:?}");

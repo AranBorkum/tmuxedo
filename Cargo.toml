@@ -1,6 +1,6 @@
 [package]
 name = "tmuxedo"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 authors = ["Aran Borkum <aranborkum@hotmail.com>"]
 description = "A Tmux plugin manager and configuration system"
@@ -14,6 +14,7 @@ tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive"] }
 ratatui = "0.29.0"
 crossterm = "0.29.0"
+regex = "1.11.1"
 
 [dev-dependencies]
 clippy = "0.0.302"

@@ -21,9 +21,19 @@ mod list;
 mod tabs;
 
 pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let mut state = State::default();
+    let mut state = State::default().await;
+    let mut index = 0;
 
     loop {
+        match index {
+            0 => index += 1,
+            1 => {
+                state.check_for_plugin_updated().await;
+                index += 1;
+            }
+            _ => {}
+        }
+
         terminal.draw(|f| {
             render(f, &state);
         })?;
