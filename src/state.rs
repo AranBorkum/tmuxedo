@@ -155,21 +155,25 @@ impl State {
     }
 
     pub fn get_installed_plugins(&self) -> Vec<String> {
-        match self.tab {
+        let mut plugins: Vec<_> = match self.tab {
             WindowTab::All => self.all_installed_plugins.keys().cloned().collect(),
             WindowTab::Themes => self.installed_themes.keys().cloned().collect(),
             WindowTab::StatusBar => self.installed_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.installed_plugins.keys().cloned().collect(),
-        }
+        };
+        plugins.sort();
+        plugins
     }
 
     pub fn get_available_plugins(&self) -> Vec<String> {
-        match self.tab {
+        let mut plugins = match self.tab {
             WindowTab::All => Vec::new(),
             WindowTab::Themes => self.available_themes.keys().cloned().collect(),
             WindowTab::StatusBar => self.available_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.available_plugins.keys().cloned().collect(),
-        }
+        };
+        plugins.sort();
+        plugins
     }
 
     pub fn set_tab(&mut self, tab: WindowTab) {
