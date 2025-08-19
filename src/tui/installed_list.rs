@@ -19,12 +19,20 @@ pub fn render_installed_list(f: &mut Frame, rect: Rect, state: &State) {
         Paragraph::new("Installed Plugins")
     };
     let mut list_state = ListState::default();
-    list_state.select(Some(state.selected_installed_plugin));
+    list_state.select(Some(state.selected_installed_plugin_index));
 
     let list_items: Vec<ListItem> = state
         .get_installed_plugins()
         .iter()
-        .map(|s| ListItem::new(format!(" * {}", s.clone())))
+        .map(|s| {
+            let p = &state.all_installed_plugins[s];
+            let display_line = match p.commit_hash.is_empty() {
+                true => format!(" * {}", s.clone()),
+                false => format!(" * {} - update available {}", s.clone(), p.commit_hash),
+            };
+
+            ListItem::new(display_line)
+        })
         .collect();
 
     let list = if !state.toggle_available_list {

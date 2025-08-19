@@ -20,7 +20,7 @@ pub fn render_list(f: &mut Frame, rect: Rect, state: &State) {
     };
 
     let mut list_state = ListState::default();
-    list_state.select(Some(state.selected_available_plugin));
+    list_state.select(Some(state.selected_available_plugin_index));
 
     let list_items: Vec<ListItem> = state
         .get_available_plugins()

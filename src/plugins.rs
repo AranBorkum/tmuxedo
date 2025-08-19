@@ -16,7 +16,14 @@ use crate::{TmuxCommand, tmuxedo::Path};
 #[derive(Debug, Eq, Clone)]
 pub struct Plugin {
     pub path: String,
+    pub commit_hash: String,
     pub is_up_to_date: bool,
+}
+
+impl Plugin {
+    pub fn set_commit_hash(&mut self, commit_hash: String) {
+        self.commit_hash = commit_hash;
+    }
 }
 
 impl PartialEq for Plugin {
@@ -29,18 +36,6 @@ impl Hash for Plugin {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.path.hash(state);
         self.is_up_to_date.hash(state);
-    }
-}
-
-impl PartialOrd for Plugin {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.path.cmp(&other.path))
-    }
-}
-
-impl Ord for Plugin {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.path.cmp(&other.path)
     }
 }
 
@@ -119,9 +114,9 @@ pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     Ok(pull_status)
 }
 
-pub async fn check_for_update(plugin: &String) -> io::Result<()> {
+pub async fn check_for_update(plugin: &str) -> io::Result<(String, String)> {
     let mut path = Path::Plugins.get();
-    path.push(plugin);
+    path.push(plugin.split("/").collect::<Vec<_>>()[1]);
 
     let output = Command::new("git")
         .arg("pull")
@@ -134,16 +129,11 @@ pub async fn check_for_update(plugin: &String) -> io::Result<()> {
     let text = String::from_utf8(output.stderr).expect("REASON");
     let re = Regex::new(r"([a-f0-9]{7})\.\.([a-f0-9]{7})").unwrap();
 
+    let mut commit = String::new();
     if let Some(caps) = re.captures(&text.to_string()) {
-        let start = &caps[1];
-        let end = &caps[2];
-        println!("Start commit: {}", start);
-        println!("End commit: {}", end);
-    } else {
-        println!("No match found.");
+        commit = caps[2].to_string();
     }
-
-    Ok(())
+    Ok((plugin.to_owned(), commit))
 }
 
 pub fn remove_dir(path: String) -> io::Result<()> {
@@ -206,7 +196,6 @@ pub async fn pull() -> io::Result<()> {
 
         handles.push(handle);
     }
-
     for handle in handles {
         if let Err(e) = handle.await {
             eprintln!("Task failed: {e:?}");

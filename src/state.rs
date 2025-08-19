@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::{self, Write};
 use std::{
     error::Error,
@@ -5,7 +6,9 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use crate::plugins::{remove_dir, run_plugins};
+use tokio::task;
+
+use crate::plugins::{Plugin, check_for_update, remove_dir, run_plugins};
 use crate::{
     plugins::{git_clone, git_pull},
     register::TmuxPlugins,
@@ -15,28 +18,22 @@ use crate::{
 
 pub struct State {
     pub tab: WindowTab,
-    pub selected_available_plugin: usize,
-    pub selected_installed_plugin: usize,
+    pub selected_available_plugin_index: usize,
+    pub selected_available_plugin_value: String,
+    pub selected_installed_plugin_index: usize,
+    pub selected_installed_plugin_value: String,
     pub toggle_available_list: bool,
-    all_installed_plugins: Vec<String>,
-    installed_themes: Vec<String>,
-    installed_status_bars: Vec<String>,
-    installed_plugins: Vec<String>,
-    available_themes: Vec<String>,
-    available_status_bars: Vec<String>,
-    available_plugins: Vec<String>,
+    pub all_installed_plugins: HashMap<String, Plugin>,
+    installed_themes: HashMap<String, Plugin>,
+    installed_status_bars: HashMap<String, Plugin>,
+    installed_plugins: HashMap<String, Plugin>,
+    available_themes: HashMap<String, Plugin>,
+    available_status_bars: HashMap<String, Plugin>,
+    available_plugins: HashMap<String, Plugin>,
 }
 
 impl State {
-    pub fn default() -> Self {
-        let mut all_installed_plugins: Vec<String> = Vec::new();
-        let mut installed_themes: Vec<String> = Vec::new();
-        let mut installed_status_bars: Vec<String> = Vec::new();
-        let mut installed_plugins: Vec<String> = Vec::new();
-        let mut available_themes: Vec<String> = Vec::new();
-        let mut available_status_bars: Vec<String> = Vec::new();
-        let mut available_plugins: Vec<String> = Vec::new();
-
+    async fn get_all_installed_plugins() -> HashMap<String, Plugin> {
         let path = Path::PluginsConfig.get();
         let file = match File::open(path) {
             Ok(file) => file,
@@ -45,72 +42,133 @@ impl State {
         let reader = BufReader::new(file);
         let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
 
-        for plugin in &lines {
-            all_installed_plugins.push(plugin.to_string());
+        let mut plugins = HashMap::<String, Plugin>::new();
+        for line in lines {
+            let plugin = line;
+            plugins.insert(
+                plugin.clone(),
+                Plugin {
+                    path: plugin,
+                    commit_hash: "".to_string(),
+                    is_up_to_date: true,
+                },
+            );
         }
 
-        for theme in TmuxPlugins::Themes.all() {
-            if lines.contains(&theme) {
-                installed_themes.push(theme);
+        plugins
+    }
+
+    pub async fn check_for_plugin_updated(&mut self) {
+        let path = Path::PluginsConfig.get();
+        let file = match File::open(path) {
+            Ok(file) => file,
+            _ => todo!(),
+        };
+        let reader = BufReader::new(file);
+        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
+
+        let mut handles = vec![];
+        for line in lines {
+            handles.push(task::spawn(async move { check_for_update(&line).await }));
+        }
+        for handle in handles {
+            match handle.await {
+                Ok(Ok(u)) => {
+                    if let Some(val) = self.all_installed_plugins.get_mut(&u.0) {
+                        val.set_commit_hash(u.1);
+                    };
+                }
+                Ok(Err(err)) => {
+                    eprintln!("Error checking update: {err}");
+                }
+                Err(join_err) => {
+                    eprintln!("Task join error: {join_err}");
+                }
+            }
+        }
+    }
+
+    fn get_installed_and_available(
+        lines: &[String],
+        tmux_plugin: TmuxPlugins,
+    ) -> (HashMap<String, Plugin>, HashMap<String, Plugin>) {
+        let mut installed = HashMap::<String, Plugin>::new();
+        let mut available = HashMap::<String, Plugin>::new();
+
+        for item in tmux_plugin.all() {
+            let p = Plugin {
+                path: item.clone(),
+                commit_hash: "".to_string(),
+                is_up_to_date: true,
+            };
+            if lines.contains(&item) {
+                installed.insert(item.clone(), p);
             } else {
-                available_themes.push(theme);
+                available.insert(item.clone(), p);
             }
         }
 
-        for status_bar in TmuxPlugins::StatusBar.all() {
-            if lines.contains(&status_bar) {
-                installed_status_bars.push(status_bar);
-            } else {
-                available_status_bars.push(status_bar);
-            }
-        }
+        (installed, available)
+    }
 
-        for plugin in TmuxPlugins::Plugins.all() {
-            if lines.contains(&plugin) {
-                installed_plugins.push(plugin);
-            } else {
-                available_plugins.push(plugin);
-            }
-        }
+    pub async fn default() -> Self {
+        let path = Path::PluginsConfig.get();
+        let file = match File::open(path) {
+            Ok(file) => file,
+            _ => todo!(),
+        };
+        let reader = BufReader::new(file);
+        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
 
-        all_installed_plugins.sort();
-        installed_themes.sort();
-        installed_status_bars.sort();
-        installed_plugins.sort();
-        available_themes.sort();
-        available_status_bars.sort();
-        available_plugins.sort();
+        let all_installed_plugins = Self::get_all_installed_plugins().await;
+        let installed_and_available_themes =
+            Self::get_installed_and_available(&lines, TmuxPlugins::Themes);
+        let installed_and_available_status_bars =
+            Self::get_installed_and_available(&lines, TmuxPlugins::StatusBar);
+        let installed_and_available_plugins =
+            Self::get_installed_and_available(&lines, TmuxPlugins::Plugins);
+
+        let selected_available_plugin_value = String::new();
+        let mut selected_installed_plugin_value = String::new();
+
+        let all_installed_plugins_as_vec: Vec<String> =
+            all_installed_plugins.keys().cloned().collect();
+        if !all_installed_plugins_as_vec.is_empty() {
+            selected_installed_plugin_value = all_installed_plugins_as_vec[0].clone();
+        }
 
         Self {
             tab: WindowTab::All,
-            selected_available_plugin: 0,
-            selected_installed_plugin: 0,
+            selected_available_plugin_index: 0,
+            selected_available_plugin_value,
+            selected_installed_plugin_index: 0,
+            selected_installed_plugin_value,
             toggle_available_list: false,
             all_installed_plugins,
-            installed_themes,
-            installed_status_bars,
-            installed_plugins,
-            available_themes,
-            available_status_bars,
-            available_plugins,
+            installed_themes: installed_and_available_themes.0,
+            installed_status_bars: installed_and_available_status_bars.0,
+            installed_plugins: installed_and_available_plugins.0,
+            available_themes: installed_and_available_themes.1,
+            available_status_bars: installed_and_available_status_bars.1,
+            available_plugins: installed_and_available_plugins.1,
         }
     }
 
     pub fn get_installed_plugins(&self) -> Vec<String> {
         match self.tab {
-            WindowTab::All => self.all_installed_plugins.clone(),
-            WindowTab::Themes => self.installed_themes.clone(),
-            WindowTab::StatusBar => self.installed_status_bars.clone(),
-            WindowTab::Plugins => self.installed_plugins.clone(),
+            WindowTab::All => self.all_installed_plugins.keys().cloned().collect(),
+            WindowTab::Themes => self.installed_themes.keys().cloned().collect(),
+            WindowTab::StatusBar => self.installed_status_bars.keys().cloned().collect(),
+            WindowTab::Plugins => self.installed_plugins.keys().cloned().collect(),
         }
     }
 
     pub fn get_available_plugins(&self) -> Vec<String> {
         match self.tab {
-            WindowTab::Themes => self.available_themes.clone(),
-            WindowTab::StatusBar => self.available_status_bars.clone(),
-            WindowTab::Plugins => self.available_plugins.clone(),
-            _ => Vec::new(),
+            WindowTab::All => Vec::new(),
+            WindowTab::Themes => self.available_themes.keys().cloned().collect(),
+            WindowTab::StatusBar => self.available_status_bars.keys().cloned().collect(),
+            WindowTab::Plugins => self.available_plugins.keys().cloned().collect(),
         }
     }
 
@@ -123,46 +181,68 @@ impl State {
     }
 
     pub fn next_available_plugin(&mut self) {
-        if !self.get_available_plugins().is_empty() {
-            let n_plugins = self.get_available_plugins().len();
-            if self.selected_available_plugin != n_plugins - 1 {
-                self.selected_available_plugin += 1
+        let available_plugins = self.get_available_plugins();
+
+        if !available_plugins.is_empty() {
+            let n_plugins = available_plugins.len();
+            if self.selected_available_plugin_index != n_plugins - 1 {
+                self.selected_available_plugin_index += 1;
+                self.selected_available_plugin_value =
+                    available_plugins[self.selected_available_plugin_index].clone();
             }
         }
     }
 
     pub fn previous_available_plugin(&mut self) {
-        if self.selected_available_plugin != 0 {
-            self.selected_available_plugin -= 1
+        if self.selected_available_plugin_index != 0 {
+            self.selected_available_plugin_index -= 1;
+            self.selected_available_plugin_value =
+                self.get_available_plugins()[self.selected_available_plugin_index].clone();
         }
     }
 
     pub fn next_installed_plugin(&mut self) {
-        if !self.get_installed_plugins().is_empty() {
-            let n_plugins = self.get_installed_plugins().len();
-            if self.selected_installed_plugin != n_plugins - 1 && n_plugins > 0 {
-                self.selected_installed_plugin += 1
+        let installed_plugins = self.get_installed_plugins();
+
+        if !installed_plugins.is_empty() {
+            let n_plugins = installed_plugins.len();
+            if self.selected_installed_plugin_index != n_plugins - 1 {
+                self.selected_installed_plugin_index += 1;
+                self.selected_installed_plugin_value =
+                    installed_plugins[self.selected_installed_plugin_index].clone();
             }
         }
     }
 
     pub fn previous_installed_plugin(&mut self) {
-        if self.selected_installed_plugin != 0 {
-            self.selected_installed_plugin -= 1
+        if self.selected_installed_plugin_index != 0 {
+            self.selected_installed_plugin_index -= 1;
+            self.selected_installed_plugin_value =
+                self.get_installed_plugins()[self.selected_installed_plugin_index].clone();
         }
     }
 
     pub fn reset_selected_available_plugin(&mut self) {
-        self.selected_available_plugin = 0;
+        let available_plugins = self.get_available_plugins();
+        self.selected_available_plugin_index = 0;
+        self.selected_available_plugin_value = match available_plugins.is_empty() {
+            true => String::new(),
+            false => available_plugins[0].clone(),
+        };
     }
 
     pub fn reset_selected_installed_plugin(&mut self) {
-        self.selected_installed_plugin = 0;
+        let installed_plugins = self.get_installed_plugins();
+        self.selected_installed_plugin_index = 0;
+        self.selected_installed_plugin_value = match installed_plugins.is_empty() {
+            true => String::new(),
+            false => installed_plugins[0].clone(),
+        };
     }
 
     fn get_installed_plugin_dir_name(&self) -> Result<String, Box<dyn Error>> {
         let plugins = self.get_installed_plugins();
-        Ok(plugins[self.selected_installed_plugin]
+        Ok(plugins[self.selected_installed_plugin_index]
             .split("/")
             .nth(1)
             .expect("REASON")
@@ -172,27 +252,23 @@ impl State {
     fn move_plugin_to_installed(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
-                self.installed_themes.push(plugin.to_owned());
-                self.all_installed_plugins.push(plugin.to_owned());
-                self.installed_themes.sort();
-                self.all_installed_plugins.sort();
-                self.available_themes.remove(self.selected_available_plugin);
+                if let Some(p) = self.available_themes.remove(plugin) {
+                    self.installed_themes.insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.insert(plugin.to_string(), p);
+                }
             }
             WindowTab::StatusBar => {
-                self.installed_status_bars.push(plugin.to_owned());
-                self.all_installed_plugins.push(plugin.to_owned());
-                self.installed_status_bars.sort();
-                self.all_installed_plugins.sort();
-                self.available_status_bars
-                    .remove(self.selected_available_plugin);
+                if let Some(p) = self.available_status_bars.remove(plugin) {
+                    self.installed_status_bars
+                        .insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.insert(plugin.to_string(), p);
+                }
             }
             WindowTab::Plugins => {
-                self.installed_plugins.push(plugin.to_owned());
-                self.all_installed_plugins.push(plugin.to_owned());
-                self.installed_plugins.sort();
-                self.all_installed_plugins.sort();
-                self.available_plugins
-                    .remove(self.selected_available_plugin);
+                if let Some(p) = self.available_plugins.remove(plugin) {
+                    self.installed_plugins.insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.insert(plugin.to_string(), p);
+                }
             }
             _ => todo!(),
         }
@@ -201,27 +277,23 @@ impl State {
     fn move_plugin_to_available(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
-                self.available_themes.push(plugin.to_owned());
-                self.all_installed_plugins
-                    .retain(|s| s != &plugin.to_owned());
-                self.available_themes.sort();
-                self.installed_themes.remove(self.selected_installed_plugin);
+                if let Some(p) = self.installed_themes.remove(plugin) {
+                    self.available_themes.insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.remove(plugin);
+                }
             }
             WindowTab::StatusBar => {
-                self.available_status_bars.push(plugin.to_owned());
-                self.all_installed_plugins
-                    .retain(|s| s != &plugin.to_owned());
-                self.available_status_bars.sort();
-                self.installed_status_bars
-                    .remove(self.selected_installed_plugin);
+                if let Some(p) = self.installed_status_bars.remove(plugin) {
+                    self.available_status_bars
+                        .insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.remove(plugin);
+                }
             }
             WindowTab::Plugins => {
-                self.available_plugins.push(plugin.to_owned());
-                self.all_installed_plugins
-                    .retain(|s| s != &plugin.to_owned());
-                self.available_plugins.sort();
-                self.installed_plugins
-                    .remove(self.selected_installed_plugin);
+                if let Some(p) = self.installed_plugins.remove(plugin) {
+                    self.available_plugins.insert(plugin.to_string(), p.clone());
+                    self.all_installed_plugins.remove(plugin);
+                }
             }
             _ => todo!(),
         }
@@ -231,7 +303,7 @@ impl State {
         let path = Path::PluginsConfig.get();
         let mut file = OpenOptions::new().write(true).truncate(true).open(path)?;
         for plugin in &self.all_installed_plugins {
-            writeln!(file, "{}", String::from(plugin))?;
+            writeln!(file, "{}", String::from(plugin.0))?;
         }
 
         Ok(())
@@ -239,7 +311,7 @@ impl State {
 
     pub async fn install_plugin(&mut self) {
         let plugins = self.get_available_plugins();
-        let plugin = &plugins[self.selected_available_plugin];
+        let plugin = &plugins[self.selected_available_plugin_index];
 
         let status = git_clone(plugin, None).await.expect("REASON");
         if status.success() {
@@ -259,7 +331,8 @@ impl State {
 
     pub fn remove_plugin(&mut self) {
         let plugins = self.get_installed_plugins();
-        let plugin = &plugins[self.selected_installed_plugin];
+        let plugin = &plugins[self.selected_installed_plugin_index];
+
         let _ = remove_dir(self.get_installed_plugin_dir_name().expect("REASON"));
         self.move_plugin_to_available(plugin);
         let _ = self.write_installed_plugins();
