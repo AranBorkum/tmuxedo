@@ -325,6 +325,9 @@ impl State {
         let plugin: String = self.get_installed_plugin_dir_name().expect("REASON");
         let status = git_pull(&plugin).await.expect("REASON");
         if status.success() {
+            if let Some(val) = self.all_installed_plugins.get_mut(&plugin) {
+                val.set_commit_hash(String::new());
+            }
             run_plugins();
         }
     }
