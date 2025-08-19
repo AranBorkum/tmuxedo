@@ -66,11 +66,13 @@ pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Resu
             if let (event::KeyCode::Char('o'), event::KeyModifiers::CONTROL) =
                 (key.code, key.modifiers)
             {
-                state.toggle_available();
+                if state.tab != WindowTab::All {
+                    state.toggle_available();
+                }
             }
             match state.toggle_available_list {
-                true => available_plugins_actions(key, &mut state).await,
-                false => installed_plugins_actions(key, &mut state).await,
+                true => install_actions(key, &mut state).await,
+                false => update_and_delete_actions(key, &mut state).await,
             }
         }
     }
@@ -78,7 +80,7 @@ pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Resu
     Ok(())
 }
 
-async fn available_plugins_actions(key: KeyEvent, state: &mut State) {
+async fn install_actions(key: KeyEvent, state: &mut State) {
     if let event::KeyCode::Char('j') = key.code {
         state.next_available_plugin();
     }
@@ -90,7 +92,7 @@ async fn available_plugins_actions(key: KeyEvent, state: &mut State) {
     }
 }
 
-async fn installed_plugins_actions(key: KeyEvent, state: &mut State) {
+async fn update_and_delete_actions(key: KeyEvent, state: &mut State) {
     if let event::KeyCode::Char('j') = key.code {
         state.next_installed_plugin();
     }

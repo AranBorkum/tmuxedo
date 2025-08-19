@@ -178,6 +178,7 @@ impl State {
 
     pub fn set_tab(&mut self, tab: WindowTab) {
         self.tab = tab;
+        self.toggle_available_list = false;
     }
 
     pub fn toggle_available(&mut self) {
@@ -253,6 +254,20 @@ impl State {
             .to_string())
     }
 
+    fn move_plugin_to_available_from_all_tab(&mut self, plugin: &str) {
+        if let Some(p) = self.installed_themes.remove(plugin) {
+            self.available_themes.insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        } else if let Some(p) = self.installed_status_bars.remove(plugin) {
+            self.available_status_bars
+                .insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        } else if let Some(p) = self.installed_plugins.remove(plugin) {
+            self.available_plugins.insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        }
+    }
+
     fn move_plugin_to_installed(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
@@ -299,7 +314,7 @@ impl State {
                     self.all_installed_plugins.remove(plugin);
                 }
             }
-            _ => todo!(),
+            WindowTab::All => self.move_plugin_to_available_from_all_tab(plugin),
         }
     }
 

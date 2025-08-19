@@ -44,20 +44,18 @@ fn default() -> Vec<Binding> {
 }
 
 pub fn get(state: &State) -> Vec<Binding> {
+    let mut default = default();
+
     if state.tab == WindowTab::All {
-        vec![Binding::Quit]
+        default.push(Binding::Update);
+        default.push(Binding::Delete);
+    } else if state.toggle_available_list {
+        default.push(Binding::ToggleInstalled);
+        default.push(Binding::Install);
     } else {
-        let mut default = default();
-
-        if state.toggle_available_list {
-            default.push(Binding::ToggleInstalled);
-            default.push(Binding::Install);
-        } else {
-            default.push(Binding::ToggleAvailable);
-            default.push(Binding::Update);
-            default.push(Binding::Delete);
-        }
-
-        default
+        default.push(Binding::ToggleAvailable);
+        default.push(Binding::Update);
+        default.push(Binding::Delete);
     }
+    default
 }
