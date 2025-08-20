@@ -6,6 +6,8 @@ use std::{
     io::{BufRead, BufReader},
 };
 
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 use tokio::task;
 
 use crate::plugins::{Plugin, check_for_update, remove_dir, run_plugins};
@@ -24,6 +26,8 @@ pub struct State {
     pub selected_installed_plugin_value: String,
     pub toggle_available_list: bool,
     pub all_installed_plugins: HashMap<String, Plugin>,
+    pub search_mode: bool,
+    pub search_string: String,
     installed_themes: HashMap<String, Plugin>,
     installed_status_bars: HashMap<String, Plugin>,
     installed_plugins: HashMap<String, Plugin>,
@@ -145,6 +149,8 @@ impl State {
             selected_installed_plugin_value,
             toggle_available_list: false,
             all_installed_plugins,
+            search_mode: false,
+            search_string: String::new(),
             installed_themes: installed_and_available_themes.0,
             installed_status_bars: installed_and_available_status_bars.0,
             installed_plugins: installed_and_available_plugins.0,
@@ -161,8 +167,31 @@ impl State {
             WindowTab::StatusBar => self.installed_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.installed_plugins.keys().cloned().collect(),
         };
-        plugins.sort();
-        plugins
+
+        match self.search_string.is_empty() {
+            true => {
+                plugins.sort();
+                plugins
+            }
+            false => {
+                let matcher = SkimMatcherV2::default();
+                let mut results: Vec<_> = plugins
+                    .iter()
+                    .filter_map(|item| {
+                        matcher
+                            .fuzzy_match(item, &self.search_string)
+                            .map(|score| (item, score))
+                    })
+                    .collect();
+
+                results.sort_by(|a, b| b.1.cmp(&a.1));
+
+                results
+                    .into_iter()
+                    .map(|(item, _)| item.to_string())
+                    .collect()
+            }
+        }
     }
 
     pub fn get_available_plugins(&self) -> Vec<String> {
@@ -172,16 +201,56 @@ impl State {
             WindowTab::StatusBar => self.available_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.available_plugins.keys().cloned().collect(),
         };
-        plugins.sort();
-        plugins
+
+        match self.search_string.is_empty() {
+            true => {
+                plugins.sort();
+                plugins
+            }
+            false => {
+                let matcher = SkimMatcherV2::default();
+                let mut results: Vec<_> = plugins
+                    .iter()
+                    .filter_map(|item| {
+                        matcher
+                            .fuzzy_match(item, &self.search_string)
+                            .map(|score| (item, score))
+                    })
+                    .collect();
+
+                results.sort_by(|a, b| b.1.cmp(&a.1));
+
+                results
+                    .into_iter()
+                    .map(|(item, _)| item.to_string())
+                    .collect()
+            }
+        }
     }
 
     pub fn set_tab(&mut self, tab: WindowTab) {
         self.tab = tab;
+        self.toggle_available_list = false;
     }
 
     pub fn toggle_available(&mut self) {
         self.toggle_available_list = !self.toggle_available_list
+    }
+
+    pub fn toggle_search_mode(&mut self) {
+        self.search_mode = !self.search_mode;
+    }
+
+    pub fn push_letter_to_search_string(&mut self, ch: char) {
+        self.search_string.push(ch);
+    }
+
+    pub fn pop_letter_from_search_string(&mut self) {
+        self.search_string.pop();
+    }
+
+    pub fn clear_search_string(&mut self) {
+        self.search_string = String::new();
     }
 
     pub fn next_available_plugin(&mut self) {
@@ -253,6 +322,20 @@ impl State {
             .to_string())
     }
 
+    fn move_plugin_to_available_from_all_tab(&mut self, plugin: &str) {
+        if let Some(p) = self.installed_themes.remove(plugin) {
+            self.available_themes.insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        } else if let Some(p) = self.installed_status_bars.remove(plugin) {
+            self.available_status_bars
+                .insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        } else if let Some(p) = self.installed_plugins.remove(plugin) {
+            self.available_plugins.insert(plugin.to_string(), p.clone());
+            self.all_installed_plugins.remove(plugin);
+        }
+    }
+
     fn move_plugin_to_installed(&mut self, plugin: &str) {
         match self.tab {
             WindowTab::Themes => {
@@ -299,7 +382,7 @@ impl State {
                     self.all_installed_plugins.remove(plugin);
                 }
             }
-            _ => todo!(),
+            WindowTab::All => self.move_plugin_to_available_from_all_tab(plugin),
         }
     }
 

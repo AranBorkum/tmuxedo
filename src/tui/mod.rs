@@ -1,6 +1,6 @@
 use std::io;
 
-use crossterm::event::{self, KeyEvent};
+use crossterm::event::{self};
 use ratatui::{
     Frame, Terminal,
     layout::{Constraint, Direction, Layout},
@@ -10,15 +10,17 @@ use ratatui::{
 use crate::{
     state::State,
     tui::{
-        installed_list::render_installed_list, keymap::render_keymap, list::render_list,
-        tabs::render_tabs,
+        input::handle_input, ui_installed_list::render_installed_list, ui_keymap::render_keymap,
+        ui_list::render_list, ui_search_box::render_search_box, ui_tabs::render_tabs,
     },
 };
 
-mod installed_list;
-mod keymap;
-mod list;
-mod tabs;
+mod input;
+mod ui_installed_list;
+mod ui_keymap;
+mod ui_list;
+mod ui_search_box;
+mod ui_tabs;
 
 pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     let mut state = State::default().await;
@@ -40,69 +42,16 @@ pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Resu
         if event::poll(std::time::Duration::from_millis(100))?
             && let event::Event::Key(key) = event::read()?
         {
-            if let event::KeyCode::Char('q') = key.code {
+            if let event::KeyCode::Char('q') = key.code
+                && !state.search_mode
+            {
                 break;
             }
-            if let event::KeyCode::Char('1') = key.code {
-                state.set_tab(WindowTab::All);
-                state.reset_selected_available_plugin();
-                state.reset_selected_installed_plugin();
-            }
-            if let event::KeyCode::Char('2') = key.code {
-                state.set_tab(WindowTab::Themes);
-                state.reset_selected_available_plugin();
-                state.reset_selected_installed_plugin();
-            }
-            if let event::KeyCode::Char('3') = key.code {
-                state.set_tab(WindowTab::StatusBar);
-                state.reset_selected_available_plugin();
-                state.reset_selected_installed_plugin();
-            }
-            if let event::KeyCode::Char('4') = key.code {
-                state.set_tab(WindowTab::Plugins);
-                state.reset_selected_available_plugin();
-                state.reset_selected_installed_plugin();
-            }
-            if let (event::KeyCode::Char('o'), event::KeyModifiers::CONTROL) =
-                (key.code, key.modifiers)
-            {
-                state.toggle_available();
-            }
-            match state.toggle_available_list {
-                true => available_plugins_actions(key, &mut state).await,
-                false => installed_plugins_actions(key, &mut state).await,
-            }
+            handle_input(key, &mut state).await;
         }
     }
 
     Ok(())
-}
-
-async fn available_plugins_actions(key: KeyEvent, state: &mut State) {
-    if let event::KeyCode::Char('j') = key.code {
-        state.next_available_plugin();
-    }
-    if let event::KeyCode::Char('k') = key.code {
-        state.previous_available_plugin();
-    }
-    if let event::KeyCode::Char('I') = key.code {
-        state.install_plugin().await;
-    }
-}
-
-async fn installed_plugins_actions(key: KeyEvent, state: &mut State) {
-    if let event::KeyCode::Char('j') = key.code {
-        state.next_installed_plugin();
-    }
-    if let event::KeyCode::Char('k') = key.code {
-        state.previous_installed_plugin();
-    }
-    if let event::KeyCode::Char('U') = key.code {
-        state.update_plugin().await;
-    }
-    if let event::KeyCode::Char('X') = key.code {
-        state.remove_plugin();
-    }
 }
 
 fn render(f: &mut Frame, state: &State) {
@@ -127,6 +76,9 @@ fn render(f: &mut Frame, state: &State) {
         render_list(f, chunks[2], state);
     }
     render_keymap(f, chunks[3], state);
+    if state.search_mode {
+        render_search_box(f, state);
+    }
 }
 
 #[derive(PartialEq)]
