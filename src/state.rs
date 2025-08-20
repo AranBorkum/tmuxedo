@@ -6,6 +6,8 @@ use std::{
     io::{BufRead, BufReader},
 };
 
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 use tokio::task;
 
 use crate::plugins::{Plugin, check_for_update, remove_dir, run_plugins};
@@ -165,8 +167,31 @@ impl State {
             WindowTab::StatusBar => self.installed_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.installed_plugins.keys().cloned().collect(),
         };
-        plugins.sort();
-        plugins
+
+        match self.search_string.is_empty() {
+            true => {
+                plugins.sort();
+                plugins
+            }
+            false => {
+                let matcher = SkimMatcherV2::default();
+                let mut results: Vec<_> = plugins
+                    .iter()
+                    .filter_map(|item| {
+                        matcher
+                            .fuzzy_match(item, &self.search_string)
+                            .map(|score| (item, score))
+                    })
+                    .collect();
+
+                results.sort_by(|a, b| b.1.cmp(&a.1));
+
+                results
+                    .into_iter()
+                    .map(|(item, _)| item.to_string())
+                    .collect()
+            }
+        }
     }
 
     pub fn get_available_plugins(&self) -> Vec<String> {
@@ -176,8 +201,31 @@ impl State {
             WindowTab::StatusBar => self.available_status_bars.keys().cloned().collect(),
             WindowTab::Plugins => self.available_plugins.keys().cloned().collect(),
         };
-        plugins.sort();
-        plugins
+
+        match self.search_string.is_empty() {
+            true => {
+                plugins.sort();
+                plugins
+            }
+            false => {
+                let matcher = SkimMatcherV2::default();
+                let mut results: Vec<_> = plugins
+                    .iter()
+                    .filter_map(|item| {
+                        matcher
+                            .fuzzy_match(item, &self.search_string)
+                            .map(|score| (item, score))
+                    })
+                    .collect();
+
+                results.sort_by(|a, b| b.1.cmp(&a.1));
+
+                results
+                    .into_iter()
+                    .map(|(item, _)| item.to_string())
+                    .collect()
+            }
+        }
     }
 
     pub fn set_tab(&mut self, tab: WindowTab) {

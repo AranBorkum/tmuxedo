@@ -42,7 +42,9 @@ pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Resu
         if event::poll(std::time::Duration::from_millis(100))?
             && let event::Event::Key(key) = event::read()?
         {
-            if let event::KeyCode::Char('q') = key.code {
+            if let event::KeyCode::Char('q') = key.code
+                && !state.search_mode
+            {
                 break;
             }
             handle_input(key, &mut state).await;

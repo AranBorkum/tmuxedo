@@ -12,6 +12,7 @@ pub enum Binding {
     Search,
     ExitSearch,
     FindSearch,
+    ClearSearch,
 }
 
 impl Binding {
@@ -28,6 +29,7 @@ impl Binding {
             Self::Search => String::from("/"),
             Self::ExitSearch => String::from("esc"),
             Self::FindSearch => String::from("enter"),
+            Self::ClearSearch => String::from("esc"),
         }
     }
 
@@ -44,6 +46,7 @@ impl Binding {
             Self::Search => String::from("search"),
             Self::ExitSearch => String::from("exit search"),
             Self::FindSearch => String::from("confirm"),
+            Self::ClearSearch => String::from("clear search"),
         }
     }
 }
@@ -53,25 +56,33 @@ pub fn get(state: &State) -> Vec<Binding> {
         true => vec![Binding::ExitSearch, Binding::FindSearch],
         false => {
             if state.tab == WindowTab::All {
-                vec![
+                let mut bindings = vec![
                     Binding::Quit,
                     Binding::Next,
                     Binding::Previous,
                     Binding::Search,
                     Binding::Update,
                     Binding::Delete,
-                ]
+                ];
+                if !state.search_string.is_empty() {
+                    bindings.push(Binding::ClearSearch);
+                }
+                bindings
             } else if state.toggle_available_list {
-                vec![
+                let mut bindings = vec![
                     Binding::Quit,
                     Binding::Next,
                     Binding::Previous,
                     Binding::Search,
                     Binding::ToggleInstalled,
                     Binding::Install,
-                ]
+                ];
+                if !state.search_string.is_empty() {
+                    bindings.push(Binding::ClearSearch);
+                }
+                bindings
             } else {
-                vec![
+                let mut bindings = vec![
                     Binding::Quit,
                     Binding::Next,
                     Binding::Previous,
@@ -79,7 +90,11 @@ pub fn get(state: &State) -> Vec<Binding> {
                     Binding::ToggleAvailable,
                     Binding::Update,
                     Binding::Delete,
-                ]
+                ];
+                if !state.search_string.is_empty() {
+                    bindings.push(Binding::ClearSearch);
+                }
+                bindings
             }
         }
     }

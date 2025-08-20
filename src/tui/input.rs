@@ -22,6 +22,8 @@ async fn handle_search_mode_input(key: KeyEvent, state: &mut State) {
     }
     if let KeyCode::Enter = key.code {
         state.toggle_search_mode();
+        state.reset_selected_installed_plugin();
+        state.reset_selected_available_plugin();
     }
 }
 
@@ -54,6 +56,11 @@ async fn handle_normal_mode_input(key: KeyEvent, state: &mut State) {
     if let KeyCode::Char('/') = key.code {
         state.clear_search_string();
         state.toggle_search_mode();
+    }
+    if let KeyCode::Esc = key.code
+        && !state.search_mode
+    {
+        state.clear_search_string();
     }
     match state.toggle_available_list {
         true => install_actions(key, state).await,
