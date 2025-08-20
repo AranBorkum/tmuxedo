@@ -1003,7 +1003,7 @@ dependencies = [
 
 [[package]]
 name = "tmuxedo"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "clap",
  "clippy",
