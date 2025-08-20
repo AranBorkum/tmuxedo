@@ -24,6 +24,8 @@ pub struct State {
     pub selected_installed_plugin_value: String,
     pub toggle_available_list: bool,
     pub all_installed_plugins: HashMap<String, Plugin>,
+    pub search_mode: bool,
+    pub search_string: String,
     installed_themes: HashMap<String, Plugin>,
     installed_status_bars: HashMap<String, Plugin>,
     installed_plugins: HashMap<String, Plugin>,
@@ -145,6 +147,8 @@ impl State {
             selected_installed_plugin_value,
             toggle_available_list: false,
             all_installed_plugins,
+            search_mode: false,
+            search_string: String::new(),
             installed_themes: installed_and_available_themes.0,
             installed_status_bars: installed_and_available_status_bars.0,
             installed_plugins: installed_and_available_plugins.0,
@@ -183,6 +187,22 @@ impl State {
 
     pub fn toggle_available(&mut self) {
         self.toggle_available_list = !self.toggle_available_list
+    }
+
+    pub fn toggle_search_mode(&mut self) {
+        self.search_mode = !self.search_mode;
+    }
+
+    pub fn push_letter_to_search_string(&mut self, ch: char) {
+        self.search_string.push(ch);
+    }
+
+    pub fn pop_letter_from_search_string(&mut self) {
+        self.search_string.pop();
+    }
+
+    pub fn clear_search_string(&mut self) {
+        self.search_string = String::new();
     }
 
     pub fn next_available_plugin(&mut self) {
