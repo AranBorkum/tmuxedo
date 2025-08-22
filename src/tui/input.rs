@@ -57,9 +57,7 @@ async fn handle_normal_mode_input(key: KeyEvent, state: &mut State) {
         state.clear_search_string();
         state.toggle_search_mode();
     }
-    if let KeyCode::Esc = key.code
-        && !state.search_mode
-    {
+    if let KeyCode::Esc = key.code {
         state.clear_search_string();
     }
     match state.toggle_available_list {
