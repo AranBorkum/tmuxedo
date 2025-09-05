@@ -9,7 +9,7 @@ use ratatui::{
 use crate::{bindings, state::State};
 
 pub fn render_keymap(f: &mut Frame, rect: Rect, state: &State) {
-    let block = Block::default().title("My Paragraph").borders(Borders::ALL);
+    let block = Block::default().title("Keymap").borders(Borders::ALL);
 
     let line = bindings::get(state)
         .into_iter()
