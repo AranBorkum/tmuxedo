@@ -15,6 +15,7 @@ pub enum Path {
     Plugins,
     PluginsConfig,
     TmuxedoConfig,
+    TmuxConfig,
 }
 
 impl Path {
@@ -26,6 +27,7 @@ impl Path {
             Self::Plugins => path.push("plugins"),
             Self::PluginsConfig => path.push("tmuxedo/plugins.conf"),
             Self::TmuxedoConfig => path.push("tmuxedo/tmuxedo.conf"),
+            Self::TmuxConfig => path.push("tmux.conf"),
         };
 
         path
@@ -78,8 +80,10 @@ pub fn ensure_structure() {
         "bind C-u run-shell tmuxedo --update",
         "bind C-t display-popup -E 'tmuxedo --tui'",
     ];
+    let tmux_defaults: Vec<&str> = vec!["run-shell 'tmuxedo'"];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());
     let _ = ensure_file_exists(&Path::PluginsConfig.get(), plugins_defaults);
     let _ = ensure_file_exists(&Path::TmuxedoConfig.get(), tmuxedo_defaults);
+    let _ = ensure_file_exists(&Path::TmuxConfig.get(), tmux_defaults);
 }

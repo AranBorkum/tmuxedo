@@ -157,7 +157,7 @@ pub async fn clone() -> io::Result<()> {
         let repo = if !repo_and_branch.is_empty() {
             repo_and_branch[0].to_string()
         } else {
-            todo!()
+            continue;
         };
         let branch: Option<String> = if repo_and_branch.len() == 2 {
             Some(repo_and_branch[1].to_string())
@@ -207,12 +207,19 @@ pub async fn pull() -> io::Result<()> {
 
 pub fn run_plugins() {
     let path = Path::Plugins.get();
-    for entry in WalkDir::new(&path)
+
+    let plugins: Vec<_> = WalkDir::new(&path)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
         .filter(|e| e.path().display().to_string().ends_with(".tmux"))
-    {
+        .collect();
+
+    if plugins.is_empty() {
+        return;
+    }
+
+    for entry in plugins {
         let arguments = vec![entry.path().display().to_string()];
         TmuxCommand::RunShell.run(arguments);
     }
