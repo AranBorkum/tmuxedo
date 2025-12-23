@@ -1,6 +1,9 @@
-use crate::plugins::{clone, pull};
+use crate::plugins::{clone, pull, remove_dir};
 use dirs::home_dir;
-use std::io::{self, Write};
+use ini::Ini;
+use std::error::Error;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader, Write};
 use std::vec;
 use std::{
     fs::{self, OpenOptions},
@@ -86,4 +89,51 @@ pub fn ensure_structure() {
     let _ = ensure_file_exists(&Path::PluginsConfig.get(), plugins_defaults);
     let _ = ensure_file_exists(&Path::TmuxedoConfig.get(), tmuxedo_defaults);
     let _ = ensure_file_exists(&Path::TmuxConfig.get(), tmux_defaults);
+}
+
+pub fn prune_mismatched_remote_origins() -> io::Result<()> {
+    let path = Path::PluginsConfig.get();
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    for line_result in reader.lines() {
+        let line = line_result?;
+        let repo_and_branch: Vec<_> = line.split_whitespace().collect();
+
+        let repo = if !repo_and_branch.is_empty() {
+            repo_and_branch[0].to_string()
+        } else {
+            continue;
+        };
+
+        if let Ok(origin_matches) = plugin_origin_matches_repo_name(&repo)
+            && !origin_matches
+        {
+            let dir_name = repo.split("/").collect::<Vec<_>>()[1];
+            let mut plugin_path = Path::Plugins.get();
+            plugin_path.push(dir_name);
+            let _ = remove_dir(plugin_path.display().to_string());
+        }
+    }
+
+    Ok(())
+}
+
+fn plugin_origin_matches_repo_name(repo_name: &String) -> Result<bool, Box<dyn Error>> {
+    let dir_name = repo_name.split("/").collect::<Vec<_>>()[1];
+    let mut path = Path::Plugins.get();
+    path.push(dir_name);
+    path.push(".git/config");
+
+    let conf = Ini::load_from_file(path)?;
+    let mut result: bool = false;
+
+    if let Some(section) = conf.section(Some("remote \"origin\""))
+        && let Some(val) = section.get("url")
+        && let Some(repo) = val.strip_prefix("https://git::@github.com/")
+    {
+        result = repo == repo_name;
+    }
+
+    Ok(result)
 }
