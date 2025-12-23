@@ -77,7 +77,7 @@ pub fn ensure_structure() {
     let tmuxedo_defaults: Vec<&str> = vec![
         "unbind r",
         "bind r run-shell tmuxedo",
-        "bind C-u run-shell tmuxedo --update",
+        "bind C-u run-shell 'tmuxedo --update'",
         "bind C-t display-popup -E 'tmuxedo --tui'",
     ];
     let tmux_defaults: Vec<&str> = vec!["run-shell 'tmuxedo'"];

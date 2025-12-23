@@ -165,11 +165,13 @@ pub async fn clone() -> io::Result<()> {
             None
         };
 
-        let handle = task::spawn(async move {
-            let _ = git_clone(&repo, branch).await;
-        });
+        if !check_if_plugin_already_cloned(&repo) {
+            let handle = task::spawn(async move {
+                let _ = git_clone(&repo, branch).await;
+            });
 
-        handles.push(handle);
+            handles.push(handle);
+        }
     }
 
     for handle in handles {
@@ -179,6 +181,13 @@ pub async fn clone() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn check_if_plugin_already_cloned(repo_name: &str) -> bool {
+    let dir_name = repo_name.split("/").collect::<Vec<_>>()[1];
+    let mut path = Path::Plugins.get();
+    path.push(dir_name);
+    path.exists()
 }
 
 pub async fn pull() -> io::Result<()> {
