@@ -11,7 +11,7 @@ use regex::Regex;
 use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
-use crate::{TmuxCommand, tmuxedo::Path};
+use crate::{TmuxCommand, tmuxedo::Path, utils::format_plugin_dir_name};
 
 #[derive(Debug, Eq, Clone)]
 pub struct Plugin {
@@ -47,6 +47,7 @@ impl Display for Plugin {
 
 pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<ExitStatus> {
     let path = Path::Plugins.get();
+    let dir_name = format_plugin_dir_name(plugin);
 
     let status = match branch {
         Some(b) => {
@@ -57,6 +58,7 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
                 .arg("--single-branch")
                 .arg("--recursive")
                 .arg(format!("https://git::@github.com/{plugin}"))
+                .arg(dir_name)
                 .current_dir(path)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -69,6 +71,7 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
                 .arg("--single-branch")
                 .arg("--recursive")
                 .arg(format!("https://git::@github.com/{plugin}"))
+                .arg(dir_name)
                 .current_dir(path)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -116,7 +119,7 @@ pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
 
 pub async fn check_for_update(plugin: &str) -> io::Result<(String, String)> {
     let mut path = Path::Plugins.get();
-    path.push(plugin.split("/").collect::<Vec<_>>()[1]);
+    path.push(format_plugin_dir_name(plugin));
 
     let output = Command::new("git")
         .arg("pull")
@@ -184,7 +187,7 @@ pub async fn clone() -> io::Result<()> {
 }
 
 fn check_if_plugin_already_cloned(repo_name: &str) -> bool {
-    let dir_name = repo_name.split("/").collect::<Vec<_>>()[1];
+    let dir_name = format_plugin_dir_name(repo_name);
     let mut path = Path::Plugins.get();
     path.push(dir_name);
     path.exists()

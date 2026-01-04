@@ -11,6 +11,7 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use tokio::task;
 
 use crate::plugins::{Plugin, check_for_update, remove_dir, run_plugins};
+use crate::utils::format_plugin_dir_name;
 use crate::{
     plugins::{git_clone, git_pull},
     register::TmuxPlugins,
@@ -315,11 +316,8 @@ impl State {
 
     fn get_installed_plugin_dir_name(&self) -> Result<String, Box<dyn Error>> {
         let plugins = self.get_installed_plugins();
-        Ok(plugins[self.selected_installed_plugin_index]
-            .split("/")
-            .nth(1)
-            .expect("REASON")
-            .to_string())
+        let dir_name = format_plugin_dir_name(&plugins[self.selected_installed_plugin_index]);
+        Ok(dir_name)
     }
 
     fn move_plugin_to_available_from_all_tab(&mut self, plugin: &str) {
