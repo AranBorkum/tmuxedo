@@ -10,7 +10,7 @@ use ratatui::{Terminal, prelude::CrosstermBackend};
 
 use crate::{
     plugins::run_plugins,
-    tmuxedo::{ensure_structure, prune_mismatched_remote_origins, source_all_tmuxedo_files},
+    tmuxedo::{ensure_structure, source_all_tmuxedo_files},
     tui::run_tmuxedo_tui,
 };
 
@@ -20,6 +20,7 @@ mod register;
 mod state;
 mod tmuxedo;
 mod tui;
+mod utils;
 
 pub enum TmuxCommand {
     SourceFile,
@@ -57,7 +58,6 @@ struct Cli {
 
 async fn run_app(cli: &Cli) -> Result<(), Box<dyn Error>> {
     ensure_structure();
-    let _ = prune_mismatched_remote_origins();
     source_all_tmuxedo_files(cli.update).await;
     run_plugins();
 
