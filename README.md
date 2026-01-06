@@ -121,3 +121,9 @@ bind r run-shell tmuxedo
 
 Found a bug? Want to suggest a plugin or feature?  
 Open an issue or PR on [GitHub](https://github.com/AranBorkum/tmuxedo)!
+
+### Support
+
+If you find Tmuxedo useful and would like to support its development, you can buy me a coffee ☕ — it’s very much appreciated!
+
+<a href="https://www.buymeacoffee.com/NightMonkeyJnr"> <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="45" /> </a>
