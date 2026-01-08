@@ -1,4 +1,4 @@
-name: Publish Crate
+name: Publish Crate & Release
 
 on:
   push:
@@ -9,6 +9,8 @@ jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for pushing tags AND creating releases
 
     steps:
       - name: Checkout repository
@@ -43,5 +45,25 @@ jobs:
 
       - name: Publish to crates.io
         if: steps.check.outputs.publish == 'true'
-        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
 
+      - name: Create and Push Tag
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -a "v${{ steps.current_version.outputs.version }}" -m "Release v${{ steps.current_version.outputs.version }}"
+          git push origin "v${{ steps.current_version.outputs.version }}"
+
+      # VVV NEW STEP: Creates the Release entry in GitHub UI
+      - name: Create GitHub Release
+        if: steps.check.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.current_version.outputs.version }}
+          name: Release v${{ steps.current_version.outputs.version }}
+          generate_release_notes: true  # Auto-generates changelog based on PRs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
