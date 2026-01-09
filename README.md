@@ -1,4 +1,11 @@
-# Tmuxedo 🕴️ — A Cleaner, Modular Approach to Tmux Configuration
+# Tmuxedo: A Cleaner, Modular Approach to Tmux Configuration
+
+<p align="center">
+    <a href="https://crates.io/crates/tmuxedo"><img src="https://img.shields.io/crates/v/tmuxedo"></a>
+    <a href="https://crates.io/crates/tmuxedo"><img src="https://img.shields.io/crates/d/tmuxedo?label=downloads"></a>
+    <a href="https://github.com/AranBorkum/tmuxedo/blob/main/LICENSE"><img src="https://img.shields.io/crates/l/tmuxedo"></a>
+    <a href="https://www.buymeacoffee.com/NightMonkeyJnr"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow.svg?logo=buy-me-a-coffee"></a>
+</p>
 
 **Tmuxedo** helps you break down your tmux configuration into modular files and manage plugins in a clean, structured way.  
 Maintainable, extensible, and fast - keep your tmux setup under control.
