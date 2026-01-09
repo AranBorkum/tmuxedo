@@ -18,84 +18,73 @@ pub enum Binding {
 impl Binding {
     pub fn key(&self) -> String {
         match self {
-            Self::Quit => String::from("q"),
-            Self::ToggleInstalled => String::from("C-o"),
-            Self::ToggleAvailable => String::from("C-o"),
-            Self::Next => String::from("j"),
-            Self::Previous => String::from("k"),
-            Self::Install => String::from("I"),
-            Self::Update => String::from("U"),
-            Self::Delete => String::from("X"),
-            Self::Search => String::from("/"),
-            Self::ExitSearch => String::from("esc"),
-            Self::FindSearch => String::from("enter"),
-            Self::ClearSearch => String::from("esc"),
+            Self::Quit => "q",
+            Self::ToggleInstalled => "C-o",
+            Self::ToggleAvailable => "C-o",
+            Self::Next => "j",
+            Self::Previous => "k",
+            Self::Install => "I",
+            Self::Update => "U",
+            Self::Delete => "X",
+            Self::Search => "/",
+            Self::ExitSearch => "esc",
+            Self::FindSearch => "enter",
+            Self::ClearSearch => "esc",
         }
+        .to_string()
     }
 
     pub fn repr(&self) -> String {
         match self {
-            Self::Quit => String::from("quit"),
-            Self::ToggleInstalled => String::from("toggle installed"),
-            Self::ToggleAvailable => String::from("toggle available"),
-            Self::Next => String::from("next"),
-            Self::Previous => String::from("previous"),
-            Self::Install => String::from("install"),
-            Self::Update => String::from("update"),
-            Self::Delete => String::from("delete"),
-            Self::Search => String::from("search"),
-            Self::ExitSearch => String::from("exit search"),
-            Self::FindSearch => String::from("confirm"),
-            Self::ClearSearch => String::from("clear search"),
+            Self::Quit => "quit",
+            Self::ToggleInstalled => "toggle installed",
+            Self::ToggleAvailable => "toggle available",
+            Self::Next => "next",
+            Self::Previous => "previous",
+            Self::Install => "install",
+            Self::Update => "update",
+            Self::Delete => "delete",
+            Self::Search => "search",
+            Self::ExitSearch => "exit search",
+            Self::FindSearch => "confirm",
+            Self::ClearSearch => "clear search",
         }
+        .to_string()
     }
+}
+
+fn search_mode_bindings() -> Vec<Binding> {
+    vec![Binding::ExitSearch, Binding::FindSearch]
+}
+
+fn normal_mode_bindings(state: &State) -> Vec<Binding> {
+    let mut defaults = vec![
+        Binding::Quit,
+        Binding::Next,
+        Binding::Previous,
+        Binding::Search,
+    ];
+
+    let mut extra;
+    if state.tab == WindowTab::All {
+        extra = vec![Binding::Update, Binding::Delete];
+    } else if state.toggle_available_list {
+        extra = vec![Binding::ToggleInstalled, Binding::Install];
+    } else {
+        extra = vec![Binding::ToggleAvailable, Binding::Update, Binding::Delete];
+    }
+
+    if !state.search_string.is_empty() {
+        extra.push(Binding::ClearSearch);
+    }
+
+    defaults.extend(extra);
+    defaults
 }
 
 pub fn get(state: &State) -> Vec<Binding> {
     match state.search_mode {
-        true => vec![Binding::ExitSearch, Binding::FindSearch],
-        false => {
-            if state.tab == WindowTab::All {
-                let mut bindings = vec![
-                    Binding::Quit,
-                    Binding::Next,
-                    Binding::Previous,
-                    Binding::Search,
-                    Binding::Update,
-                    Binding::Delete,
-                ];
-                if !state.search_string.is_empty() {
-                    bindings.push(Binding::ClearSearch);
-                }
-                bindings
-            } else if state.toggle_available_list {
-                let mut bindings = vec![
-                    Binding::Quit,
-                    Binding::Next,
-                    Binding::Previous,
-                    Binding::Search,
-                    Binding::ToggleInstalled,
-                    Binding::Install,
-                ];
-                if !state.search_string.is_empty() {
-                    bindings.push(Binding::ClearSearch);
-                }
-                bindings
-            } else {
-                let mut bindings = vec![
-                    Binding::Quit,
-                    Binding::Next,
-                    Binding::Previous,
-                    Binding::Search,
-                    Binding::ToggleAvailable,
-                    Binding::Update,
-                    Binding::Delete,
-                ];
-                if !state.search_string.is_empty() {
-                    bindings.push(Binding::ClearSearch);
-                }
-                bindings
-            }
-        }
+        true => search_mode_bindings(),
+        false => normal_mode_bindings(state),
     }
 }
