@@ -23,13 +23,19 @@ Maintainable, extensible, and fast - keep your tmux setup under control.
 
 ### 📦 Installation
 
-Install from [crates.io](https://crates.io/crates/tmuxedo):
+#### Homebrew (macOS & Linux)
+
+```bash
+brew install aranborkum/tap/tmuxedo
+```
+
+#### Install from [crates.io](https://crates.io/crates/tmuxedo):
 
 ```bash
 cargo install tmuxedo
 ```
 
-Or build from source:
+#### Or build from source:
 
 ```bash
 git clone https://github.com/AranBorkum/tmuxedo
