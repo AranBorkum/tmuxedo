@@ -10,12 +10,14 @@ use ratatui::{
 use crate::{
     state::State,
     tui::{
-        input::handle_input, ui_installed_list::render_installed_list, ui_keymap::render_keymap,
-        ui_list::render_list, ui_search_box::render_search_box, ui_tabs::render_tabs,
+        input::handle_input, ui_banner::render_banner, ui_installed_list::render_installed_list,
+        ui_keymap::render_keymap, ui_list::render_list, ui_search_box::render_search_box,
+        ui_tabs::render_tabs,
     },
 };
 
 mod input;
+mod ui_banner;
 mod ui_installed_list;
 mod ui_keymap;
 mod ui_list;
@@ -61,6 +63,7 @@ fn render(f: &mut Frame, state: &State) {
         .direction(Direction::Vertical)
         .constraints(
             [
+                Constraint::Length(6),
                 Constraint::Length(2),
                 Constraint::Max(10),
                 Constraint::Min(0),
@@ -70,12 +73,13 @@ fn render(f: &mut Frame, state: &State) {
         )
         .split(size);
 
-    render_tabs(f, chunks[0], state);
-    render_installed_list(f, chunks[1], state);
+    render_banner(f, chunks[0]);
+    render_tabs(f, chunks[1], state);
+    render_installed_list(f, chunks[2], state);
     if state.tab != WindowTab::All {
-        render_list(f, chunks[2], state);
+        render_list(f, chunks[3], state);
     }
-    render_keymap(f, chunks[3], state);
+    render_keymap(f, chunks[4], state);
     if state.search_mode {
         render_search_box(f, state);
     }
