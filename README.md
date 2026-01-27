@@ -128,6 +128,20 @@ bind r run-shell tmuxedo
    ```
 2. Re-run `tmuxedo` to re-install plugins with updated naming convention.
 
+### ⚠️ Important Update (v0.1.14+)
+
+**Change for Existing Users:**  
+As of version **0.1.14**, a banner is now displayed at the top of the TUI. To accommodate this, the popup dimensions have changed.
+
+**How to Update:**  
+Add the flags `-w 80% -h 80%` (recommended) after `display-popup` in `tmuxedo.conf`, or simply delete `tmuxedo.conf` and re-run `tmuxedo` to regenerate it.
+
+1. Delete your existing config file:
+   ```bash
+   rm -f ~/.config/tmux/tmuxedo/tmuxedo.conf
+   ```
+2. Re-run `tmuxedo` to regenerate the config file
+
 ---
 
 ### 🙌 Contributions Welcome
