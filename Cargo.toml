@@ -1,6 +1,6 @@
 [package]
 name = "tmuxedo"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2024"
 authors = ["Aran Borkum <aranborkum@hotmail.com>"]
 description = "A Tmux plugin manager and configuration system"
