@@ -32,7 +32,7 @@ brew install aranborkum/tap/tmuxedo
 #### Install from [crates.io](https://crates.io/crates/tmuxedo):
 
 ```bash
-cargo install tmuxedo
+cargo install --locked tmuxedo
 ```
 
 #### Or build from source:
@@ -40,7 +40,7 @@ cargo install tmuxedo
 ```bash
 git clone https://github.com/AranBorkum/tmuxedo
 cd tmuxedo
-cargo install --path .
+cargo install --locked --path .
 ```
 
 ---
