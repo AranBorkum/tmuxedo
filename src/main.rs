@@ -9,12 +9,14 @@ use crossterm::{
 use ratatui::{Terminal, prelude::CrosstermBackend};
 
 use crate::{
+    cli::Cli,
     plugins::run_plugins,
     tmuxedo::{ensure_structure, source_all_tmuxedo_files},
     tui::run_tmuxedo_tui,
 };
 
 mod bindings;
+mod cli;
 mod plugins;
 mod register;
 mod state;
@@ -44,16 +46,6 @@ impl TmuxCommand {
             Err(e) => eprintln!("Failed to run tmux command: {e}"),
         }
     }
-}
-
-#[derive(Parser, Debug)]
-#[command(name = "my-app")]
-struct Cli {
-    #[arg(short, long, default_value_t = false)]
-    tui: bool,
-
-    #[arg(short, long, default_value_t = false)]
-    update: bool,
 }
 
 async fn run_app(cli: &Cli) -> Result<(), Box<dyn Error>> {
