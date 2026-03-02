@@ -142,6 +142,24 @@ Add the flags `-w 80% -h 80%` (recommended) after `display-popup` in `tmuxedo.co
    ```
 2. Re-run `tmuxedo` to regenerate the config file
 
+### ⚠️ Important Update (v0.1.15+)
+
+**Change for Existing Users**
+
+As of **v0.1.15**, plugins are now installed in:
+
+`~/.local/share/tmuxedo/plugins`
+
+instead of the config directory.
+
+Tmuxedo will automatically reinstall your plugins in the new location on first run.
+
+The old directory:
+
+`~/.config/tmux/tmuxedo/plugins`
+
+can be safely deleted.
+
 ---
 
 ### 🙌 Contributions Welcome
