@@ -21,15 +21,13 @@ pub enum Path {
 impl Path {
     pub fn get(&self) -> PathBuf {
         let mut path = home_dir().expect("Could not find home directory");
-        path.push(".config/tmux");
         match self {
-            Self::Tmuxedo => path.push("tmuxedo"),
-            Self::Plugins => path.push("plugins"),
-            Self::PluginsConfig => path.push("tmuxedo/plugins.conf"),
-            Self::TmuxedoConfig => path.push("tmuxedo/tmuxedo.conf"),
-            Self::TmuxConfig => path.push("tmux.conf"),
+            Self::Tmuxedo => path.push(".config/tmux/tmuxedo"),
+            Self::Plugins => path.push(".local/share/tmuxedo/plugins"),
+            Self::PluginsConfig => path.push(".config/tmux/tmuxedo/plugins.conf"),
+            Self::TmuxedoConfig => path.push(".config/tmux/tmuxedo/tmuxedo.conf"),
+            Self::TmuxConfig => path.push(".config/tmux/tmux.conf"),
         };
-
         path
     }
 }

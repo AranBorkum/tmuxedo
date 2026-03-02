@@ -50,7 +50,7 @@ cargo install --locked --path .
 Running `tmuxedo` for the first time sets up:
 
 - `~/.config/tmux/tmuxedo/` – your modular config directory
-- `~/.config/tmux/plugins/` – plugin installation directory
+- `~/.local/share/tmuxedo/plugins/` – plugin installation directory
 - `~/.config/tmux/tmuxedo/plugins.conf` – your plugin manifest
 
 Add this line to the end of your `.tmux.conf` to hook it all up:
