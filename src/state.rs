@@ -37,6 +37,14 @@ pub struct State {
     available_plugins: HashMap<String, Plugin>,
 }
 
+fn get_lines(reader: BufReader<File>) -> Vec<String> {
+    reader
+        .lines()
+        .map_while(Result::ok)
+        .filter(|line| !line.trim().is_empty() && !line.trim().starts_with('#'))
+        .collect()
+}
+
 impl State {
     async fn get_all_installed_plugins() -> HashMap<String, Plugin> {
         let path = Path::PluginsConfig.get();
@@ -45,8 +53,7 @@ impl State {
             _ => todo!(),
         };
         let reader = BufReader::new(file);
-        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
-
+        let lines: Vec<String> = get_lines(reader);
         let mut plugins = HashMap::<String, Plugin>::new();
         for line in lines {
             let plugin = line;
@@ -70,7 +77,7 @@ impl State {
             _ => todo!(),
         };
         let reader = BufReader::new(file);
-        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
+        let lines: Vec<String> = get_lines(reader);
 
         let mut handles = vec![];
         for line in lines {
@@ -123,7 +130,7 @@ impl State {
             _ => todo!(),
         };
         let reader = BufReader::new(file);
-        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
+        let lines: Vec<String> = get_lines(reader);
 
         let all_installed_plugins = Self::get_all_installed_plugins().await;
         let installed_and_available_themes =
@@ -185,7 +192,7 @@ impl State {
                     })
                     .collect();
 
-                results.sort_by(|a, b| b.1.cmp(&a.1));
+                results.sort_by_key(|b| std::cmp::Reverse(b.1));
 
                 results
                     .into_iter()
@@ -219,7 +226,7 @@ impl State {
                     })
                     .collect();
 
-                results.sort_by(|a, b| b.1.cmp(&a.1));
+                results.sort_by_key(|b| std::cmp::Reverse(b.1));
 
                 results
                     .into_iter()
@@ -394,15 +401,61 @@ impl State {
         Ok(())
     }
 
+    fn uncomment_or_add_plugin(&self, plugin_to_enable: &str) -> io::Result<bool> {
+        let path = Path::PluginsConfig.get();
+        let file = File::open(&path)?;
+        let reader = BufReader::new(file);
+
+        let mut lines: Vec<String> = Vec::new();
+        let mut was_commented = false;
+
+        for line_result in reader.lines() {
+            let line = line_result?;
+            let trimmed = line.trim();
+
+            if trimmed.starts_with('#') {
+                let uncommented = trimmed.trim_start_matches('#').trim();
+                let repo_name = uncommented.split_whitespace().next().unwrap_or("");
+
+                if repo_name == plugin_to_enable {
+                    lines.push(uncommented.to_string());
+                    was_commented = true;
+                } else {
+                    lines.push(line);
+                }
+            } else {
+                lines.push(line);
+            }
+        }
+
+        let mut file = OpenOptions::new().write(true).truncate(true).open(path)?;
+        for line in lines {
+            writeln!(file, "{}", line)?;
+        }
+
+        Ok(was_commented)
+    }
+
     pub async fn install_plugin(&mut self) {
         let plugins = self.get_available_plugins();
         let plugin = &plugins[self.selected_available_plugin_index];
 
-        let status = git_clone(plugin, None).await.expect("REASON");
-        if status.success() {
-            self.move_plugin_to_installed(plugin);
-            let _ = self.write_installed_plugins();
-            run_plugins();
+        match self.uncomment_or_add_plugin(plugin) {
+            Ok(true) => {
+                self.move_plugin_to_installed(plugin);
+                run_plugins();
+            }
+            Ok(false) => {
+                let status = git_clone(plugin, None).await.expect("REASON");
+                if status.success() {
+                    self.move_plugin_to_installed(plugin);
+                    let _ = self.write_installed_plugins();
+                    run_plugins();
+                }
+            }
+            Err(e) => {
+                eprintln!("Error reading plugins.conf: {e}");
+            }
         }
     }
 

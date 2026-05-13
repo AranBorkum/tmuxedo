@@ -155,6 +155,11 @@ pub async fn clone() -> io::Result<()> {
 
     for line_result in reader.lines() {
         let line = line_result?;
+
+        if line.trim().is_empty() || line.trim().starts_with('#') {
+            continue;
+        }
+
         let repo_and_branch: Vec<_> = line.split_whitespace().collect();
 
         let repo = if !repo_and_branch.is_empty() {
@@ -217,8 +222,36 @@ pub async fn pull() -> io::Result<()> {
     Ok(())
 }
 
+fn get_enabled_plugins() -> Vec<String> {
+    let config_path = Path::PluginsConfig.get();
+    let enabled_plugins: Vec<String> = match File::open(config_path) {
+        Ok(file) => {
+            let reader = BufReader::new(file);
+            reader
+                .lines()
+                .map_while(Result::ok)
+                .filter(|line| !line.trim().is_empty() && !line.trim().starts_with('#'))
+                .map(|line| {
+                    let repo = line.split_whitespace().next().unwrap_or("");
+                    format_plugin_dir_name(repo)
+                })
+                .collect()
+        }
+        Err(_) => {
+            eprintln!("Could not read plugins.conf");
+            vec![]
+        }
+    };
+    enabled_plugins
+}
+
 pub fn run_plugins() {
     let path = Path::Plugins.get();
+
+    let enabled_plugins = get_enabled_plugins();
+    if enabled_plugins.is_empty() {
+        return;
+    }
 
     let plugins: Vec<_> = WalkDir::new(&path)
         .into_iter()
@@ -227,12 +260,15 @@ pub fn run_plugins() {
         .filter(|e| e.path().display().to_string().ends_with(".tmux"))
         .collect();
 
-    if plugins.is_empty() {
-        return;
-    }
-
     for entry in plugins {
-        let arguments = vec![entry.path().display().to_string()];
-        TmuxCommand::RunShell.run(arguments);
+        let entry_path = entry.path().display().to_string();
+        let is_enabled = enabled_plugins
+            .iter()
+            .any(|plugin_dir| entry_path.contains(&format!("/{}/", plugin_dir)));
+
+        if is_enabled {
+            let arguments = vec![entry_path];
+            TmuxCommand::RunShell.run(arguments);
+        }
     }
 }
