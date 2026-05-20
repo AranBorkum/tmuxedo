@@ -11,7 +11,7 @@ use regex::Regex;
 use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
-use crate::{TmuxCommand, tmuxedo::Path, utils::format_plugin_dir_name};
+use crate::{tmux::TmuxCommand, tmuxedo::Path, utils::format_plugin_dir_name};
 
 #[derive(Debug, Eq, Clone)]
 pub struct Plugin {
@@ -89,7 +89,8 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
 
 pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     let mut path = Path::Plugins.get();
-    path.push(plugin);
+    path.push(format_plugin_dir_name(plugin));
+    println!("{}", path.display());
 
     let pull_status = Command::new("git")
         .arg("pull")
@@ -217,10 +218,10 @@ pub async fn pull() -> io::Result<()> {
     Ok(())
 }
 
-pub fn run_plugins() {
-    let plugins_path = Path::Plugins.get();
+pub fn run() {
+    let path = Path::Plugins.get();
 
-    let plugins: Vec<_> = WalkDir::new(&plugins_path)
+    let plugins: Vec<_> = WalkDir::new(&path)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
