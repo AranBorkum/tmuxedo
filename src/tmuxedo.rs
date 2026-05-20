@@ -1,14 +1,11 @@
-use crate::plugins::{clone, pull};
+use crate::plugins::clone;
+use crate::utils::{ensure_dir_exists, ensure_file_exists};
 use dirs::home_dir;
-use std::io::{self, Write};
+use std::path::PathBuf;
 use std::vec;
-use std::{
-    fs::{self, OpenOptions},
-    path::PathBuf,
-};
 use walkdir::WalkDir;
 
-use crate::TmuxCommand;
+use crate::tmux::TmuxCommand;
 
 pub enum Path {
     Tmuxedo,
@@ -34,18 +31,15 @@ impl Path {
     }
 }
 
-pub async fn source_all_tmuxedo_files(update: bool) {
+pub async fn source_all_tmuxedo_files() {
     let tmuxedo_dir = Path::Tmuxedo.get();
     for entry in WalkDir::new(&tmuxedo_dir)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.path().is_file())
     {
-        if entry.path().display().to_string().ends_with("plugins.conf") {
-            let _ = match update {
-                true => pull().await,
-                false => clone().await,
-            };
+        if entry.path() == Path::PluginsConfig.get() {
+            let _ = clone().await;
         } else {
             if !entry
                 .path()
@@ -58,25 +52,6 @@ pub async fn source_all_tmuxedo_files(update: bool) {
             }
         }
     }
-}
-
-fn ensure_dir_exists(path: &PathBuf) {
-    match fs::create_dir_all(path) {
-        Ok(_) => {}
-        Err(e) => eprintln!("Error creating directory: {e}"),
-    }
-}
-
-fn ensure_file_exists(path: &PathBuf, content: Vec<&str>) -> io::Result<()> {
-    if !path.exists() {
-        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
-
-        for line in content {
-            writeln!(file, "{}", String::from(line))?;
-        }
-    }
-
-    Ok(())
 }
 
 pub fn ensure_structure() {
