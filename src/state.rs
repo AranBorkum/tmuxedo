@@ -10,7 +10,7 @@ use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use tokio::task;
 
-use crate::plugins::{Plugin, check_for_update, remove_dir, run_plugins};
+use crate::plugins::{Plugin, check_for_update, remove_dir, run};
 use crate::utils::format_plugin_dir_name;
 use crate::{
     plugins::{git_clone, git_pull},
@@ -355,7 +355,11 @@ impl State {
                     self.all_installed_plugins.insert(plugin.to_string(), p);
                 }
             }
-            _ => todo!(),
+            _ => {
+                if let Some(p) = self.available_plugins.remove(plugin) {
+                    self.all_installed_plugins.insert(plugin.to_string(), p);
+                }
+            }
         }
     }
 
@@ -402,7 +406,16 @@ impl State {
         if status.success() {
             self.move_plugin_to_installed(plugin);
             let _ = self.write_installed_plugins();
-            run_plugins();
+            run();
+        }
+    }
+
+    pub async fn install_plugin_by_name(&mut self, plugin: String) {
+        let status = git_clone(&plugin, None).await.expect("REASON");
+        if status.success() {
+            self.move_plugin_to_installed(&plugin);
+            let _ = self.write_installed_plugins();
+            run();
         }
     }
 
@@ -413,7 +426,14 @@ impl State {
             if let Some(val) = self.all_installed_plugins.get_mut(&plugin) {
                 val.set_commit_hash(String::new());
             }
-            run_plugins();
+            run();
+        }
+    }
+
+    pub async fn update_plugin_by_name(&mut self, plugin: String) {
+        let status = git_pull(&plugin).await.expect("REASON");
+        if status.success() {
+            run();
         }
     }
 
@@ -424,6 +444,15 @@ impl State {
         let _ = remove_dir(self.get_installed_plugin_dir_name().expect("REASON"));
         self.move_plugin_to_available(plugin);
         let _ = self.write_installed_plugins();
-        run_plugins();
+        run();
+    }
+
+    pub fn remove_plugin_by_name(&mut self, plugin: String) {
+        let mut path = Path::Plugins.get();
+        path.push(format_plugin_dir_name(&plugin));
+
+        let _ = remove_dir(path.display().to_string());
+        self.move_plugin_to_available(&plugin);
+        let _ = self.write_installed_plugins();
     }
 }
