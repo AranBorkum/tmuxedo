@@ -1,8 +1,15 @@
-use std::io;
+use std::{error::Error, io};
+
+use ratatui::{Terminal, prelude::CrosstermBackend};
 
 use crossterm::event::{self};
+use crossterm::{
+    event::{DisableMouseCapture, EnableMouseCapture},
+    execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+};
 use ratatui::{
-    Frame, Terminal,
+    Frame,
     layout::{Constraint, Direction, Layout},
     prelude::Backend,
 };
@@ -23,6 +30,30 @@ mod ui_keymap;
 mod ui_list;
 mod ui_search_box;
 mod ui_tabs;
+
+pub async fn run() -> Result<(), Box<dyn Error>> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let res = run_tmuxedo_tui(&mut terminal).await;
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    if let Err(err) = res {
+        println!("{err:?}");
+    }
+
+    Ok(())
+}
 
 pub async fn run_tmuxedo_tui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     let mut state = State::default().await;
