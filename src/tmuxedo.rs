@@ -47,8 +47,15 @@ pub async fn source_all_tmuxedo_files(update: bool) {
                 false => clone().await,
             };
         } else {
-            let arguments = vec![entry.path().display().to_string()];
-            TmuxCommand::SourceFile.run(arguments)
+            if !entry
+                .path()
+                .display()
+                .to_string()
+                .ends_with("plugins-local.conf")
+            {
+                let arguments = vec![entry.path().display().to_string()];
+                TmuxCommand::SourceFile.run(arguments)
+            }
         }
     }
 }
