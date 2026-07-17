@@ -52,6 +52,7 @@ Running `tmuxedo` for the first time sets up:
 - `~/.config/tmux/tmuxedo/` – your modular config directory
 - `~/.local/share/tmuxedo/plugins/` – plugin installation directory
 - `~/.config/tmux/tmuxedo/plugins.conf` – your plugin manifest
+- `~/.config/tmux/tmuxedo/plugins-local.conf` – your local plugin manifest
 
 Add this line to the end of your `.tmux.conf` to hook it all up:
 
@@ -97,6 +98,7 @@ The TUI lets you:
 - Add new ones manually
 
 If a plugin isn't listed, manually add it to `plugins.conf`, and consider submitting a PR to include it for others!
+If you're developing your own plugin and want to import it locally, add the directory path to `plugins-local.conf`.
 
 ---
 

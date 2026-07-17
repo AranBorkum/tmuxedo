@@ -14,6 +14,7 @@ pub enum Path {
     Tmuxedo,
     Plugins,
     PluginsConfig,
+    LocalPluginsConfig,
     TmuxedoConfig,
     TmuxConfig,
 }
@@ -25,6 +26,7 @@ impl Path {
             Self::Tmuxedo => path.push(".config/tmux/tmuxedo"),
             Self::Plugins => path.push(".local/share/tmuxedo/plugins"),
             Self::PluginsConfig => path.push(".config/tmux/tmuxedo/plugins.conf"),
+            Self::LocalPluginsConfig => path.push(".config/tmux/tmuxedo/plugins-local.conf"),
             Self::TmuxedoConfig => path.push(".config/tmux/tmuxedo/tmuxedo.conf"),
             Self::TmuxConfig => path.push(".config/tmux/tmux.conf"),
         };
@@ -45,8 +47,15 @@ pub async fn source_all_tmuxedo_files(update: bool) {
                 false => clone().await,
             };
         } else {
-            let arguments = vec![entry.path().display().to_string()];
-            TmuxCommand::SourceFile.run(arguments)
+            if !entry
+                .path()
+                .display()
+                .to_string()
+                .ends_with("plugins-local.conf")
+            {
+                let arguments = vec![entry.path().display().to_string()];
+                TmuxCommand::SourceFile.run(arguments)
+            }
         }
     }
 }
@@ -81,7 +90,8 @@ pub fn ensure_structure() {
     let tmux_defaults: Vec<&str> = vec!["run-shell 'tmuxedo'"];
     ensure_dir_exists(&Path::Tmuxedo.get());
     ensure_dir_exists(&Path::Plugins.get());
-    let _ = ensure_file_exists(&Path::PluginsConfig.get(), plugins_defaults);
+    let _ = ensure_file_exists(&Path::PluginsConfig.get(), plugins_defaults.clone());
+    let _ = ensure_file_exists(&Path::LocalPluginsConfig.get(), plugins_defaults.clone());
     let _ = ensure_file_exists(&Path::TmuxedoConfig.get(), tmuxedo_defaults);
     let _ = ensure_file_exists(&Path::TmuxConfig.get(), tmux_defaults);
 }

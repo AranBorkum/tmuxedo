@@ -9,7 +9,7 @@ use crossterm::{
 use ratatui::{Terminal, prelude::CrosstermBackend};
 
 use crate::{
-    plugins::run_plugins,
+    plugins::{run_local_plugins, run_plugins},
     tmuxedo::{ensure_structure, source_all_tmuxedo_files},
     tui::run_tmuxedo_tui,
 };
@@ -60,6 +60,7 @@ async fn run_app(cli: &Cli) -> Result<(), Box<dyn Error>> {
     ensure_structure();
     source_all_tmuxedo_files(cli.update).await;
     run_plugins();
+    let _ = run_local_plugins();
 
     Ok(())
 }

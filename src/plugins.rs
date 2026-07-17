@@ -218,9 +218,9 @@ pub async fn pull() -> io::Result<()> {
 }
 
 pub fn run_plugins() {
-    let path = Path::Plugins.get();
+    let plugins_path = Path::Plugins.get();
 
-    let plugins: Vec<_> = WalkDir::new(&path)
+    let plugins: Vec<_> = WalkDir::new(&plugins_path)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
@@ -235,4 +235,34 @@ pub fn run_plugins() {
         let arguments = vec![entry.path().display().to_string()];
         TmuxCommand::RunShell.run(arguments);
     }
+}
+
+pub fn run_local_plugins() -> Result<(), Box<dyn std::error::Error>> {
+    let local_plugins_path = Path::LocalPluginsConfig.get();
+    let file = File::open(local_plugins_path)?;
+    let reader = BufReader::new(file);
+
+    for line_result in reader.lines() {
+        let directory = line_result?;
+        let directory = directory.trim();
+        if directory.is_empty() {
+            continue;
+        }
+
+        let tmux_file = fs::read_dir(directory)?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .find(|path| {
+                path.is_file() && path.extension().map(|ext| ext == "tmux").unwrap_or(false)
+            });
+
+        match tmux_file {
+            Some(path) => {
+                let arguments = vec![path.display().to_string()];
+                TmuxCommand::RunShell.run(arguments);
+            }
+            None => eprintln!("No .tmux file found in {directory}"),
+        }
+    }
+    Ok(())
 }
