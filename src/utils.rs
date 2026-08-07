@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::process::Stdio;
 use std::{
     fs::{self, OpenOptions},
     path::PathBuf,
@@ -25,6 +26,30 @@ pub fn ensure_file_exists(path: &PathBuf, content: Vec<&str>) -> io::Result<()> 
     }
 
     Ok(())
+}
+
+pub fn open_fuzzy_picker(prompt: &str, values: Vec<String>) -> io::Result<Option<String>> {
+    let mut child = std::process::Command::new("fzf")
+        .arg(format!("--prompt={}> ", prompt))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(values.join("\n").as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+    if !output.status.success() {
+        return Ok(None);
+    }
+
+    let selected = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if selected.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(selected))
+    }
 }
 
 #[cfg(test)]

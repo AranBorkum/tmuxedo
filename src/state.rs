@@ -8,6 +8,7 @@ use std::{
 
 use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
+use log::{info, warn};
 use tokio::task;
 
 use crate::plugins::{Plugin, check_for_update, remove_dir, run};
@@ -413,9 +414,19 @@ impl State {
     pub async fn install_plugin_by_name(&mut self, plugin: String) {
         let status = git_clone(&plugin, None).await.expect("REASON");
         if status.success() {
-            self.move_plugin_to_installed(&plugin);
+            self.all_installed_plugins.insert(
+                plugin.clone(),
+                Plugin {
+                    path: plugin.clone(),
+                    commit_hash: String::new(),
+                    is_up_to_date: true,
+                },
+            );
             let _ = self.write_installed_plugins();
             run();
+            info!("{} installed successfully", plugin);
+        } else {
+            warn!("{} installation failed", plugin);
         }
     }
 
@@ -434,6 +445,9 @@ impl State {
         let status = git_pull(&plugin).await.expect("REASON");
         if status.success() {
             run();
+            info!("{} updated successfully", plugin);
+        } else {
+            warn!("{} update failed", plugin);
         }
     }
 
@@ -454,5 +468,6 @@ impl State {
         let _ = remove_dir(path.display().to_string());
         self.move_plugin_to_available(&plugin);
         let _ = self.write_installed_plugins();
+        info!("{} removed", plugin)
     }
 }

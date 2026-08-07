@@ -1,4 +1,4 @@
-use crate::{app, state::State, tui};
+use crate::{app, plugins, state::State, tui};
 use clap::{Parser, Subcommand};
 use std::error::Error;
 
@@ -26,14 +26,14 @@ pub enum Commands {
     Install {
         /// Plugin name or URL to install
         #[arg(short, long)]
-        plugin: Option<String>,
+        plugin: String,
     },
 
     /// Remove a plugin
     Remove {
-        /// Plugin name to remove
+        /// Plugin name to remove (omit to select interactively with fzf)
         #[arg(short, long)]
-        plugin: String,
+        plugin: Option<String>,
     },
 }
 
@@ -44,10 +44,19 @@ async fn update(plugin: Option<String>, state: &mut State) -> Result<(), Box<dyn
     }
 }
 
-async fn install(plugin: Option<String>, state: &mut State) -> Result<(), Box<dyn Error>> {
+async fn install(plugin: String, state: &mut State) -> Result<(), Box<dyn Error>> {
+    app::install(plugin, state).await
+}
+
+async fn remove(plugin: Option<String>, state: &mut State) -> Result<(), Box<dyn Error>> {
+    let plugin = match plugin {
+        Some(plugin) => Some(plugin),
+        None => plugins::select_plugin_via_fzf()?,
+    };
+
     match plugin {
-        Some(plugin) => app::install(plugin, state).await,
-        None => app::install_all().await,
+        Some(plugin) => app::remove(plugin, state).await,
+        None => Ok(()),
     }
 }
 
@@ -59,7 +68,7 @@ pub async fn run() {
         Some(Commands::Tui) => tui::run().await,
         Some(Commands::Update { plugin }) => update(plugin, &mut state).await,
         Some(Commands::Install { plugin }) => install(plugin, &mut state).await,
-        Some(Commands::Remove { plugin }) => app::remove(plugin, &mut state).await,
+        Some(Commands::Remove { plugin }) => remove(plugin, &mut state).await,
         None => app::run().await,
     };
 

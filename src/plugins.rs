@@ -7,11 +7,16 @@ use std::{
     vec,
 };
 
+use log::{info, warn};
 use regex::Regex;
 use tokio::{io, process::Command, task};
 use walkdir::WalkDir;
 
-use crate::{tmux::TmuxCommand, tmuxedo::Path, utils::format_plugin_dir_name};
+use crate::{
+    tmux::TmuxCommand,
+    tmuxedo::Path,
+    utils::{self, format_plugin_dir_name},
+};
 
 #[derive(Debug, Eq, Clone)]
 pub struct Plugin {
@@ -90,7 +95,6 @@ pub async fn git_clone(plugin: &String, branch: Option<String>) -> io::Result<Ex
 pub async fn git_pull(plugin: &String) -> io::Result<ExitStatus> {
     let mut path = Path::Plugins.get();
     path.push(format_plugin_dir_name(plugin));
-    println!("{}", path.display());
 
     let pull_status = Command::new("git")
         .arg("pull")
@@ -140,6 +144,26 @@ pub async fn check_for_update(plugin: &str) -> io::Result<(String, String)> {
     Ok((plugin.to_owned(), commit))
 }
 
+pub fn select_plugin_via_fzf() -> io::Result<Option<String>> {
+    let path = Path::PluginsConfig.get();
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let plugins: Vec<String> = reader
+        .lines()
+        .map_while(Result::ok)
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.is_empty())
+        .collect();
+
+    if plugins.is_empty() {
+        info!("No plugins installed to remove");
+        return Ok(None);
+    }
+
+    utils::open_fuzzy_picker("Remove plugin", plugins)
+}
+
 pub fn remove_dir(path: String) -> io::Result<()> {
     let mut dir = Path::Plugins.get();
     dir.push(path);
@@ -178,10 +202,20 @@ pub async fn clone() -> io::Result<()> {
         }
     }
 
+    let mut success = true;
+    if handles.is_empty() {
+        info!("All plugins already installed");
+        return Ok(());
+    }
+
     for handle in handles {
         if let Err(e) = handle.await {
-            eprintln!("Task failed: {e:?}");
+            success = false;
+            warn!("Task Failed: {e:?}");
         }
+    }
+    if success {
+        info!("Successfully installed all plugins");
     }
 
     Ok(())
@@ -209,10 +243,16 @@ pub async fn pull() -> io::Result<()> {
 
         handles.push(handle);
     }
+
+    let mut success = true;
     for handle in handles {
         if let Err(e) = handle.await {
-            eprintln!("Task failed: {e:?}");
+            success = false;
+            warn!("Task Failed: {e:?}");
         }
+    }
+    if success {
+        info!("Successfully updated all plugins");
     }
 
     Ok(())
